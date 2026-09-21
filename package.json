@@ -1,6 +1,6 @@
 {
   "name": "shuxue-peilian",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "开源数学陪练：分层题组 + 错题本（艾宾浩斯间隔复习）+ 大学教材定义定理通俗详解与证明",
   "type": "module",
   "private": false,
