@@ -65,7 +65,7 @@ jobs:
       - name: 数学记号排版测试（极限号的教科书样式）
         run: npm run test-math
 
-      - name: 端到端冒烟测试（44 项断言，真实执行 app.js）
+      - name: 端到端冒烟测试（62 项断言，真实执行 app.js）
         run: npm run smoke
 
       - name: README 事实核对（防止文档与代码脱节）
