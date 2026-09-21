@@ -68,6 +68,9 @@ jobs:
       - name: README 事实核对（防止文档与代码脱节）
         run: npm run verify-readme
 
+      - name: 社区文件校验（issue 表单结构、行为准则、安全策略）
+        run: npm run verify-community
+
       - name: 汇总
         if: success()
         run: |

@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 先读文档（多数问题这里有答案）
+    url: https://github.com/Vanilla-IceWagtail/math-improvement-plan#readme
+    about: 安装、使用、输入输出示例、已知限制、许可说明
+  - name: ✍️ 想贡献内容？先看贡献指南
+    url: https://github.com/Vanilla-IceWagtail/math-improvement-plan/blob/main/CONTRIBUTING.md
+    about: 怎么改讲解、加题目、加整本教材，以及必须遵守的版权红线
+  - name: 🔒 报告安全问题（不要用公开 issue）
+    url: https://github.com/Vanilla-IceWagtail/math-improvement-plan/security/advisories/new
+    about: 私密提交，只有维护者能看到

@@ -204,9 +204,10 @@ node scripts/serve.mjs 8080
 | 内容校验 | 204 条教材条目 + 194 道题的结构、id 唯一性、引用完整性、富文本标记 |
 | 端到端冒烟测试 | 44 项断言，真实执行 `js/app.js` |
 | README 事实核对 | 文档里的数字、示例、路径必须与代码一致 |
+| 社区文件校验 | issue 表单结构、行为准则、安全策略、交叉链接 |
 
 在 **Node 20 与 Node 22** 上各跑一遍（矩阵构建），任一失败即 CI 失败。
-`npm run check` 在本地等价于后三步。
+`npm run check` 在本地等价于后四步。
 
 ### 常用命令
 
@@ -641,6 +642,18 @@ LICENSE-SCOPE.md           许可范围说明（哪部分适用哪份许可）
 3. **加教材** → 在 `data/books/` 写章节，在 `registry.js` 登记（不用改 JS 逻辑）
 
 写完跑 `npm run check`。
+
+### 社区文件
+
+| 文件 | 用途 |
+| --- | --- |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | 怎么改讲解、加题目、加教材；提交前自检；版权红线 |
+| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) | 行为准则（Contributor Covenant 3.0）：对人友善、对事严格 |
+| [`SECURITY.md`](SECURITY.md) | 安全模型与漏洞私密报告渠道（**安全问题请勿用公开 issue**） |
+| [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE) | 提 issue 时的表单：内容纠错 / Bug 报告 / 功能建议 |
+| [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) | 提 PR 时的检查清单（含版权确认） |
+| [`CHANGELOG.md`](CHANGELOG.md) | 每个版本改了什么 |
+| [`LICENSE-SCOPE.md`](LICENSE-SCOPE.md) | 哪部分适用 BSD 3-Clause、哪部分适用 CC-BY-4.0 |
 
 ---
 

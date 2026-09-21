@@ -1,0 +1,66 @@
+name: 内容纠错（数学错误 / 错别字 / 讲得不清楚）
+description: 报告某条定义、定理、证明或题目的错误，或建议把讲解改得更通俗
+title: '[内容] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你帮忙抓错！这个项目最需要的就是**内容上的较真**。
+
+        提交前请先确认：内容来自**最新代码**（`main` 分支或
+        [在线站点](https://vanilla-icewagtail.github.io/math-improvement-plan/)），
+        问题可能已经修过了。
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: 问题类型
+      options:
+        - 数学错误（结论、证明、答案算错了）
+        - 通俗解释（plain 字段）讲得不够清楚或比喻不恰当
+        - 错别字 / 标点 / 排版
+        - 定义与定理归类不当
+        - 题目难度标注不合理
+        - 题目解析写得不清楚
+        - 其它内容问题
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: 位置
+      description: 哪一章、哪一节、哪一条？有 id 最好（例如 thm-rolle / q-ch3-001）
+      placeholder: 例如：第 3 章 3.1 罗尔定理（id thm-rolle），或题目 q-ch3-001
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题是什么
+      description: 请说明你认为哪里不对，以及为什么
+      placeholder: |
+        例如：证明第 3 步说"由费马引理可得"，但费马引理要求的是内点取得极值，
+        这里还没证明 ξ 是内点……
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 建议怎么改（可选）
+      description: 如果你已经有了更好的写法或更通俗的比喻，直接贴出来
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我是在最新版本上看到这个问题的
+          required: true
+        - label: 我没有从教材或付费题库整段复制内容（本项目的讲解必须是原创表述）
+          required: true

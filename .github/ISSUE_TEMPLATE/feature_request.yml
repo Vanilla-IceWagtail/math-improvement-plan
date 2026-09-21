@@ -1,0 +1,47 @@
+name: 功能建议
+description: 想要一个新功能，或想改现有行为
+title: '[建议] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请先看一眼 [README 的「已知限制」](https://github.com/Vanilla-IceWagtail/math-improvement-plan#7-已知限制)
+        与 [CHANGELOG](https://github.com/Vanilla-IceWagtail/math-improvement-plan/blob/main/CHANGELOG.md)，
+        你的想法可能已经在计划里了。
+
+        本项目的两条硬约束，请先确认你的建议不冲突：
+        **零依赖**（不引入 npm 包 / 框架 / CDN）、**零后端**（不引入服务器与账号）。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 你想解决什么问题
+      description: 先说问题，再说方案 —— 这样我们更容易找到更好的解法
+      placeholder: 例如：我背完一条定理后，过几天完全想不起来了，但错题本只能提醒题目，定义定理加进去后复习体验很别扭……
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 你希望怎么改
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternative
+    attributes:
+      label: 你考虑过的其它做法（可选）
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 这个建议不需要引入 npm 依赖或后端服务
+          required: true
+        - label: 我搜索过现有 issue，没有重复
+          required: true

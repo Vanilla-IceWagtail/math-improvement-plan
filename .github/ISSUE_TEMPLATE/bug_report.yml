@@ -1,0 +1,63 @@
+name: Bug 报告（功能不正常）
+description: 网站打不开、按钮点了没反应、错题本提醒不出现等
+title: '[Bug] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        提交前请先看一眼 [已知限制](https://github.com/Vanilla-IceWagtail/math-improvement-plan#7-已知限制) ——
+        有几件事是**按设计如此**的（例如填空题判分是字符串比对，不做等价性判断）。
+
+        如果你怀疑是**安全问题**，请不要用这个模板，改用
+        [SECURITY.md](https://github.com/Vanilla-IceWagtail/math-improvement-plan/blob/main/SECURITY.md)
+        里的私密渠道。
+
+  - type: textarea
+    id: what
+    attributes:
+      label: 发生了什么
+      description: 你期望的结果 vs 实际的结果
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 尽量一步一步写清楚，别人照着做也能复现
+      placeholder: |
+        1. 打开「组题组」
+        2. 选知识点「罗尔定理」
+        3. 点「生成我的题组」
+        4. ……
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: 在哪里遇到的
+      options:
+        - 在线站点（GitHub Pages）
+        - 本地 npm start
+        - 两者都有
+    validations:
+      required: true
+
+  - type: input
+    id: env
+    attributes:
+      label: 浏览器与系统
+      placeholder: 例如 Chrome 140 / Windows 11，或 Safari / iPhone iOS 19
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: 控制台报错（可选，但非常有帮助）
+      description: 按 F12 打开开发者工具 → Console 标签页，把红色报错贴进来
+      render: text
+    validations:
+      required: false
