@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>数学陪练 · 题组 / 错题本 / 教材定理定义</title>
+<meta name="description" content="开源数学陪练：按知识点层层递进出题，错题本按艾宾浩斯曲线提醒复习，大学教材的定义与定理配通俗解释和完整证明。" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#0f766e" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f766e'/%3E%3Ctext x='16' y='23' font-size='20' font-family='sans-serif' text-anchor='middle' fill='white'%3E%E2%88%AB%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles/base.css" />
+<link rel="stylesheet" href="styles/app.css" />
+<link rel="stylesheet" href="styles/print.css" media="print" />
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主内容</a>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">∫</span>
+      <span class="brand-text">
+        <strong>数学陪练</strong>
+        <small>题组 · 错题本 · 定理定义</small>
+      </span>
+    </div>
+
+    <nav class="mainnav" id="mainnav" aria-label="主导航">
+      <button type="button" class="navbtn" data-view="practice">
+        <span class="ico" data-icon="target" aria-hidden="true"></span><span>组题组</span>
+      </button>
+      <button type="button" class="navbtn" data-view="notebook">
+        <span class="ico" data-icon="notebook" aria-hidden="true"></span><span>错题本</span>
+        <span class="badge" id="nav-notebook-badge" hidden>0</span>
+      </button>
+      <button type="button" class="navbtn" data-view="textbook">
+        <span class="ico" data-icon="book" aria-hidden="true"></span><span>教材定理定义</span>
+      </button>
+    </nav>
+
+    <div class="topbar-actions">
+      <button type="button" class="iconbtn" id="btn-remind" title="查看今天要复习的内容" aria-label="复习提醒">
+        <span class="ico" data-icon="bell" aria-hidden="true"></span>
+        <span class="badge" id="bell-badge" hidden>0</span>
+      </button>
+      <button type="button" class="iconbtn" id="btn-favorites" title="我的收藏" aria-label="我的收藏">
+        <span class="ico" data-icon="star" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="iconbtn" id="btn-data" title="数据与设置" aria-label="数据与设置">
+        <span class="ico" data-icon="settings" aria-hidden="true"></span>
+      </button>
+      <button type="button" class="iconbtn" id="btn-theme" title="切换深色/浅色" aria-label="切换主题">
+        <span class="ico" data-icon="moon" aria-hidden="true"></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main" class="app-main" tabindex="-1"></main>
+
+  <div class="toast-host" id="toast-host" aria-live="polite" aria-atomic="false"></div>
+  <div class="modal-host" id="modal-host"></div>
+
+  <script type="module" src="js/app.js"></script>
+  <noscript>
+    <p style="padding:24px">这个网站需要 JavaScript 才能运行。请开启 JavaScript 后刷新页面。</p>
+  </noscript>
+</body>
+</html>

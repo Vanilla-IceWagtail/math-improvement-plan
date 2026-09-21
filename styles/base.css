@@ -1,0 +1,177 @@
+/* ==========================================================================
+   base.css —— 设计变量、重置、排版
+   零依赖：所有颜色、圆角、阴影都走 CSS 变量，方便二次开发换主题。
+   ========================================================================== */
+
+:root {
+  /* 主色 */
+  --c-primary: #0f766e;
+  --c-primary-soft: #ccfbf1;
+  --c-primary-ink: #115e59;
+  --c-accent: #d97706;
+
+  /* 定义 / 定理 的区分色 */
+  --c-def: #2563eb;
+  --c-def-soft: #dbeafe;
+  --c-def-ink: #1e40af;
+  --c-thm: #7c3aed;
+  --c-thm-soft: #ede9fe;
+  --c-thm-ink: #5b21b6;
+  --c-formula: #0891b2;
+  --c-formula-soft: #cffafe;
+  --c-note: #64748b;
+  --c-note-soft: #f1f5f9;
+
+  /* 状态色 */
+  --c-ok: #16a34a;
+  --c-ok-soft: #dcfce7;
+  --c-warn: #ea580c;
+  --c-warn-soft: #ffedd5;
+  --c-danger: #dc2626;
+  --c-danger-soft: #fee2e2;
+
+  /* 中性色 */
+  --c-bg: #f6f7f9;
+  --c-bg-alt: #eceff3;
+  --c-surface: #ffffff;
+  --c-surface-2: #f8fafc;
+  --c-border: #e2e8f0;
+  --c-border-strong: #cbd5e1;
+  --c-text: #16202e;
+  --c-text-soft: #55637a;
+  --c-text-faint: #8a97ab;
+  --c-overlay: rgba(15, 23, 42, .48);
+
+  /* 形状 */
+  --r-xs: 6px;
+  --r-sm: 9px;
+  --r-md: 13px;
+  --r-lg: 18px;
+  --r-full: 999px;
+  --sh-1: 0 1px 2px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .05);
+  --sh-2: 0 4px 12px rgba(15, 23, 42, .08), 0 1px 3px rgba(15, 23, 42, .05);
+  --sh-3: 0 18px 40px rgba(15, 23, 42, .18);
+
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 22px; --sp-6: 30px; --sp-7: 42px;
+
+  --font: "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB", "Noto Sans SC",
+          system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-math: "Cambria Math", "Latin Modern Math", "Times New Roman", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
+
+  --topbar-h: 62px;
+  --content-max: 1080px;
+  --dur: .18s;
+}
+
+html[data-theme="dark"] {
+  --c-primary: #2dd4bf;
+  --c-primary-soft: #10312e;
+  --c-primary-ink: #5eead4;
+  --c-accent: #fbbf24;
+
+  --c-def: #7dabff;
+  --c-def-soft: #16233c;
+  --c-def-ink: #a9c7ff;
+  --c-thm: #b79dff;
+  --c-thm-soft: #241a3c;
+  --c-thm-ink: #cdbcff;
+  --c-formula: #4dd6ea;
+  --c-formula-soft: #0e2c33;
+  --c-note: #94a3b8;
+  --c-note-soft: #1d2430;
+
+  --c-ok: #4ade80;
+  --c-ok-soft: #12301f;
+  --c-warn: #fb923c;
+  --c-warn-soft: #33200f;
+  --c-danger: #f87171;
+  --c-danger-soft: #34181a;
+
+  --c-bg: #0e1319;
+  --c-bg-alt: #131a22;
+  --c-surface: #161e27;
+  --c-surface-2: #1b242f;
+  --c-border: #26313d;
+  --c-border-strong: #384656;
+  --c-text: #e8eef6;
+  --c-text-soft: #a7b4c5;
+  --c-text-faint: #78879b;
+  --c-overlay: rgba(2, 6, 12, .65);
+
+  --sh-1: 0 1px 2px rgba(0, 0, 0, .4);
+  --sh-2: 0 4px 14px rgba(0, 0, 0, .45);
+  --sh-3: 0 20px 44px rgba(0, 0, 0, .6);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 15.5px;
+  line-height: 1.72;
+  color: var(--c-text);
+  background: var(--c-bg);
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 { margin: 0; font-weight: 700; line-height: 1.32; letter-spacing: -.01em; }
+p { margin: 0 0 var(--sp-3); }
+p:last-child { margin-bottom: 0; }
+ul, ol { margin: 0 0 var(--sp-3); padding-left: 1.35em; }
+li { margin-bottom: var(--sp-1); }
+li:last-child { margin-bottom: 0; }
+
+a { color: var(--c-primary); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: .93em;
+  padding: .1em .38em;
+  border-radius: var(--r-xs);
+  background: var(--c-note-soft);
+  color: var(--c-text);
+  white-space: nowrap;
+}
+
+b, strong { font-weight: 700; }
+em { font-style: normal; color: var(--c-primary-ink); font-weight: 600; }
+
+button { font: inherit; color: inherit; }
+input, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: 2.5px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+::selection { background: var(--c-primary-soft); color: var(--c-primary-ink); }
+
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 200;
+  background: var(--c-surface); padding: var(--sp-3) var(--sp-4);
+  border-radius: 0 0 var(--r-sm) 0; box-shadow: var(--sh-2);
+}
+.skip-link:focus { left: 0; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* 滚动条 */
+* { scrollbar-width: thin; scrollbar-color: var(--c-border-strong) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--c-border-strong); border-radius: var(--r-full); border: 3px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

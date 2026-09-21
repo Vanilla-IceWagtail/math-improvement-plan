@@ -1,0 +1,28 @@
+{
+  "name": "shuxue-peilian",
+  "version": "1.0.0",
+  "description": "开源数学陪练：分层题组 + 错题本（艾宾浩斯间隔复习）+ 大学教材定义定理通俗详解与证明",
+  "type": "module",
+  "private": false,
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "mathematics",
+    "calculus",
+    "spaced-repetition",
+    "ebbinghaus",
+    "education",
+    "open-source",
+    "vanilla-js"
+  ],
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs",
+    "validate": "node scripts/validate-content.mjs",
+    "verify-readme": "node scripts/verify-readme.mjs",
+    "smoke": "node scripts/smoke-test.mjs",
+    "check": "node scripts/validate-content.mjs && node scripts/smoke-test.mjs && node scripts/verify-readme.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
