@@ -1,0 +1,80 @@
+name: CI
+
+# 什么时候跑：
+#   - 推送到 main
+#   - 任何针对 main 的 Pull Request
+#   - 也可以在 Actions 页面手动点 "Run workflow"
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支连续推送时，取消上一次未跑完的任务，省资源
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# 默认最小权限：CI 只需要读代码
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: 内容校验 / 冒烟测试 / 文档核对
+    runs-on: ubuntu-latest
+
+    strategy:
+      # 一个版本失败时，另一个继续跑完，能看到完整结果
+      fail-fast: false
+      matrix:
+        node-version: ['20', '22']
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # 本项目是零依赖的：没有 npm 包、没有构建步骤。
+      # 所以这里不装依赖，而是把"零依赖"当成一条会被 CI 守住的项目原则——
+      # 万一将来有人引入了运行时依赖，这一步会直接失败并说明原因。
+      - name: 校验零依赖原则（没有 dependencies / devDependencies）
+        run: |
+          node -e "
+            const pkg = require('./package.json');
+            const deps = Object.keys(pkg.dependencies || {});
+            const dev = Object.keys(pkg.devDependencies || {});
+            if (deps.length || dev.length) {
+              console.error('❌ 本项目坚持零依赖，但 package.json 里出现了：');
+              if (deps.length) console.error('   dependencies:    ' + deps.join(', '));
+              if (dev.length) console.error('   devDependencies: ' + dev.join(', '));
+              console.error('   请去掉它们，或先开 Issue 讨论为什么需要引入依赖。');
+              process.exit(1);
+            }
+            console.log('✅ 零依赖：dependencies 与 devDependencies 均为空');
+          "
+
+      - name: 内容校验（字段、id 唯一性、引用完整性、富文本标记）
+        run: npm run validate
+
+      - name: 端到端冒烟测试（44 项断言，真实执行 app.js）
+        run: npm run smoke
+
+      - name: README 事实核对（防止文档与代码脱节）
+        run: npm run verify-readme
+
+      - name: 汇总
+        if: success()
+        run: |
+          echo "### ✅ 全部检查通过（Node ${{ matrix.node-version }}）" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 检查项 | 说明 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 内容校验 | 204 条教材条目 + 194 道题的结构与引用完整性 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 冒烟测试 | 内容加载、组题阶梯、三个版块渲染、错题本调度 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 文档核对 | README 里的数字、示例、路径与代码一致 |" >> "$GITHUB_STEP_SUMMARY"

@@ -7,6 +7,7 @@
 ![无后端](https://img.shields.io/badge/后端-无-0f766e)
 ![代码 BSD-3-Clause](https://img.shields.io/badge/代码-BSD--3--Clause-2563eb)
 ![内容 CC-BY-4.0](https://img.shields.io/badge/内容-CC--BY--4.0-7c3aed)
+[![CI](https://github.com/Vanilla-IceWagtail/math-improvement-plan/actions/workflows/ci.yml/badge.svg)](https://github.com/Vanilla-IceWagtail/math-improvement-plan/actions/workflows/ci.yml)
 
 ---
 
@@ -182,6 +183,21 @@ node scripts/serve.mjs 8080
 
 纯静态，把整个目录交给任何静态托管即可（GitHub Pages / Netlify / Vercel / 自己的 nginx）。
 不需要 Node 运行时；`scripts/`、`docs/` 只在本地开发时用。
+
+### 持续集成（CI）
+
+仓库自带 GitHub Actions 工作流 [`.github/workflows/ci.yml`](.github/workflows/ci.yml)，
+在**推送到 main**、**任何针对 main 的 PR**、以及**手动触发**时自动运行：
+
+| CI 步骤 | 做什么 |
+| --- | --- |
+| 校验零依赖原则 | 检查 `package.json` 里没有 `dependencies` / `devDependencies` |
+| 内容校验 | 204 条教材条目 + 194 道题的结构、id 唯一性、引用完整性、富文本标记 |
+| 端到端冒烟测试 | 44 项断言，真实执行 `js/app.js` |
+| README 事实核对 | 文档里的数字、示例、路径必须与代码一致 |
+
+在 **Node 20 与 Node 22** 上各跑一遍（矩阵构建），任一失败即 CI 失败。
+`npm run check` 在本地等价于后三步。
 
 ### 常用命令
 
@@ -579,6 +595,7 @@ scripts/
   fetch-open-bank.mjs      开放许可题库导入管道
 CONTRIBUTING.md            贡献指南
 CHANGELOG.md               更新日志
+.github/workflows/ci.yml   CI：推送到 main / PR / 手动触发时跑全部校验
 LICENSE                    BSD 3-Clause（代码与文档的许可正文）
 LICENSE-SCOPE.md           许可范围说明（哪部分适用哪份许可）
 ```

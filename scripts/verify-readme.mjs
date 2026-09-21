@@ -154,6 +154,16 @@ check('README 徽章标注 BSD 3-Clause', /!\[代码 BSD-3-Clause\]/.test(readme
 check('README 许可表标注 BSD 3-Clause', /\[BSD 3-Clause\]\(LICENSE\)/.test(readme), 'true');
 check('README 未把本项目代码说成 MIT', /\|\s*代码[^|]*\|\s*\[MIT\]/.test(readme), 'false');
 
+/* ---- 10.5 CI 配置 ---- */
+const ciYml = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+check('CI 工作流存在且指定了 main 分支', /branches:\s*\[main\]/.test(ciYml), 'true');
+check('CI 跑了 validate / smoke / verify-readme 三步',
+  /npm run validate/.test(ciYml) && /npm run smoke/.test(ciYml) && /npm run verify-readme/.test(ciYml), 'true');
+check('CI 守住了零依赖原则', /dependencies/.test(ciYml) && /devDependencies/.test(ciYml), 'true');
+check('CI 用 Node 20 与 22 矩阵', /'20'/.test(ciYml) && /'22'/.test(ciYml), 'true');
+check('README 有 CI 徽章', /actions\/workflows\/ci\.yml\/badge\.svg/.test(readme), 'true');
+check('README 说明了 CI', /持续集成（CI）/.test(readme), 'true');
+
 /* ---- 11. README 里引用的文件都真实存在 ---- */
 const paths = [...readme.matchAll(/`(data\/[\w./*-]+|js\/[\w./*-]+|styles\/[\w./-]+|scripts\/[\w./-]+|docs\/[\w./-]+|CONTRIBUTING\.md|CHANGELOG\.md|LICENSE)`/g)]
   .map((m) => m[1])
