@@ -161,6 +161,11 @@ check('CI 跑了 validate / smoke / verify-readme 三步',
   /npm run validate/.test(ciYml) && /npm run smoke/.test(ciYml) && /npm run verify-readme/.test(ciYml), 'true');
 check('CI 守住了零依赖原则', /dependencies/.test(ciYml) && /devDependencies/.test(ciYml), 'true');
 check('CI 用 Node 20 与 22 矩阵', /'20'/.test(ciYml) && /'22'/.test(ciYml), 'true');
+// v4 系列的 action 运行在 node20 上，GitHub 已标记 deprecated 并会在运行日志里报警告；
+// v5 起改用 node24。这条断言防止将来有人无意改回去。
+check('CI 的 actions 使用 v5+（不用 deprecated 的 node20 版本）',
+  !/actions\/(checkout|setup-node)@v[0-4]/.test(ciYml)
+  && /actions\/checkout@v5/.test(ciYml) && /actions\/setup-node@v5/.test(ciYml), 'true');
 check('README 有 CI 徽章', /actions\/workflows\/ci\.yml\/badge\.svg/.test(readme), 'true');
 check('README 说明了 CI', /持续集成（CI）/.test(readme), 'true');
 
