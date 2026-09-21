@@ -579,7 +579,8 @@ scripts/
   fetch-open-bank.mjs      开放许可题库导入管道
 CONTRIBUTING.md            贡献指南
 CHANGELOG.md               更新日志
-LICENSE                    BSD 3-Clause（代码与文档）
+LICENSE                    BSD 3-Clause（代码与文档的许可正文）
+LICENSE-SCOPE.md           许可范围说明（哪部分适用哪份许可）
 ```
 
 ---
@@ -631,6 +632,10 @@ BSD 3-Clause 允许自由使用、修改、分发和商用，条件是：
 3. **不得用本项目的名义或贡献者的名字为你的衍生产品背书**。
 
 `data/` 目录下的原创内容走 CC-BY-4.0（署名即可，同样允许商用）。
+
+> **哪部分适用哪份许可？** 逐目录的完整划分见 [`LICENSE-SCOPE.md`](LICENSE-SCOPE.md)。
+> （`LICENSE` 只放 BSD 3-Clause 官方纯正文，这样 GitHub 才能正确识别出 `BSD-3-Clause`
+> 徽章；一旦在正文里附加说明文字，GitHub 会归类成 "Other"。）
 
 教材中的书名、章节名、定义名、定理名属于事实性信息，本项目只登记这些标题；
 **所有讲解文字、通俗解释、证明过程与题目均为原创撰写**，未抄录任何教材原文。

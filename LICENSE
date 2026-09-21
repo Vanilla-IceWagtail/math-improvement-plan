@@ -27,21 +27,3 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
----
-
-范围说明 / Scope
-
-上面这份 BSD 3-Clause 许可只覆盖**代码**：HTML、CSS、JavaScript（`js/`、`styles/`）、
-构建与工具脚本（`scripts/`）、以及 `index.html`、`package.json`。
-
-`data/` 目录下的**原创内容**（教材知识点的通俗解释、证明、例题、易错点，
-以及题库题目）**不适用**上面这份 BSD 许可，而是以
-Creative Commons Attribution 4.0 International (CC BY 4.0) 许可发布：
-你可以自由复制、修改、分发、商用，只需保留署名。
-
-`docs/`、`README.md`、`CONTRIBUTING.md`、`CHANGELOG.md` 等文档采用与代码相同的
-BSD 3-Clause 许可。
-
-关于教材引用的边界（只登记书名/章节名/定义名/定理名，讲解与证明均为原创），
-以及第三方题库的许可要求，详见 docs/legal.md。

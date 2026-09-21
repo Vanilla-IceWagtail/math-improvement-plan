@@ -139,12 +139,16 @@ check('复习弹窗 1 = 忘了', /e\.key === '1'/.test(nbSrc), 'true');
 
 /* ---- 10. 许可声明一致性 ---- */
 const licenseText = await readFile(new URL('../LICENSE', import.meta.url), 'utf8');
+const scopeText = await readFile(new URL('../LICENSE-SCOPE.md', import.meta.url), 'utf8');
 const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
 check('LICENSE 是 BSD 3-Clause', /^BSD 3-Clause License/.test(licenseText), 'true');
 check('LICENSE 含三条条款', /Redistributions of source code/.test(licenseText)
   && /Redistributions in binary form/.test(licenseText)
   && /Neither the name of the copyright holder/.test(licenseText), 'true');
-check('LICENSE 保留 CC-BY-4.0 的内容范围说明', /CC BY 4\.0/.test(licenseText), 'true');
+check('LICENSE 保持官方纯正文（否则 GitHub 会识别成 Other）', !/CC BY 4\.0|范围说明|附录/.test(licenseText), 'true');
+check('LICENSE-SCOPE.md 说明 CC-BY-4.0 内容范围', /CC BY 4\.0/.test(scopeText), 'true');
+check('LICENSE-SCOPE.md 说明第三方题库许可', /保留其原许可/.test(scopeText), 'true');
+check('README 指向 LICENSE-SCOPE.md', /LICENSE-SCOPE\.md/.test(readme), 'true');
 check('package.json 的 license 字段', pkg.license, 'BSD-3-Clause');
 check('README 徽章标注 BSD 3-Clause', /!\[代码 BSD-3-Clause\]/.test(readme), 'true');
 check('README 许可表标注 BSD 3-Clause', /\[BSD 3-Clause\]\(LICENSE\)/.test(readme), 'true');
