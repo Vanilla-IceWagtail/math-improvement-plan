@@ -169,7 +169,22 @@ check('CI 的 actions 使用 v5+（不用 deprecated 的 node20 版本）',
 check('README 有 CI 徽章', /actions\/workflows\/ci\.yml\/badge\.svg/.test(readme), 'true');
 check('README 说明了 CI', /持续集成（CI）/.test(readme), 'true');
 
-/* ---- 11. README 里引用的文件都真实存在 ---- */
+/* ---- 11. GitHub Pages 部署 ---- */
+const pagesYml = await readFile(new URL('../.github/workflows/deploy-pages.yml', import.meta.url), 'utf8');
+check('Pages 工作流存在', /Deploy to GitHub Pages/.test(pagesYml), 'true');
+check('Pages 工作流用官方三个 action',
+  /actions\/configure-pages@v6/.test(pagesYml)
+  && /actions\/upload-pages-artifact@v5/.test(pagesYml)
+  && /actions\/deploy-pages@v5/.test(pagesYml), 'true');
+check('Pages 工作流只在 CI 成功后部署', /workflow_run/.test(pagesYml)
+  && /conclusion\s*==\s*'success'/.test(pagesYml), 'true');
+check('Pages 工作流声明了 pages/id-token 权限', /pages:\s*write/.test(pagesYml) && /id-token:\s*write/.test(pagesYml), 'true');
+check('Pages 工作流绑定了 github-pages 环境', /environment:/.test(pagesYml) && /name:\s*github-pages/.test(pagesYml), 'true');
+check('README 说明了 Pages 在线访问方式', /vanilla-icewagtail\.github\.io\/math-improvement-plan/.test(readme), 'true');
+check('README 项目结构列出 Pages 工作流', /deploy-pages\.yml/.test(readme), 'true');
+check('README 项目结构列出 ci-actions\.mjs', /ci-actions\.mjs/.test(readme), 'true');
+
+/* ---- 12. README 里引用的文件都真实存在 ---- */
 const paths = [...readme.matchAll(/`(data\/[\w./*-]+|js\/[\w./*-]+|styles\/[\w./-]+|scripts\/[\w./-]+|docs\/[\w./-]+|CONTRIBUTING\.md|CHANGELOG\.md|LICENSE)`/g)]
   .map((m) => m[1])
   .filter((p) => !p.includes('*') && !p.endsWith('/'));

@@ -8,6 +8,7 @@
 ![代码 BSD-3-Clause](https://img.shields.io/badge/代码-BSD--3--Clause-2563eb)
 ![内容 CC-BY-4.0](https://img.shields.io/badge/内容-CC--BY--4.0-7c3aed)
 [![CI](https://github.com/Vanilla-IceWagtail/math-improvement-plan/actions/workflows/ci.yml/badge.svg)](https://github.com/Vanilla-IceWagtail/math-improvement-plan/actions/workflows/ci.yml)
+[![在线访问](https://img.shields.io/badge/在线访问-GitHub%20Pages-0f766e)](https://vanilla-icewagtail.github.io/math-improvement-plan/)
 
 ---
 
@@ -181,8 +182,16 @@ node scripts/serve.mjs 8080
 
 ### 部署到网上
 
-纯静态，把整个目录交给任何静态托管即可（GitHub Pages / Netlify / Vercel / 自己的 nginx）。
-不需要 Node 运行时；`scripts/`、`docs/` 只在本地开发时用。
+**已开启 GitHub Pages，可以直接在线访问：**
+
+### 👉 https://vanilla-icewagtail.github.io/math-improvement-plan/
+
+推送到 `main` 且 CI 通过后会自动发布，不需要手工操作。
+发布内容只包含站点需要的四样：`index.html`、`styles/`、`js/`、`data/`
+（`scripts/`、`docs/` 等开发文件不发布到网站上）。
+
+也可以部署到别的静态托管（Netlify / Vercel / 自己的 nginx）：
+把整个目录交出去即可，不需要 Node 运行时。
 
 ### 持续集成（CI）
 
@@ -596,6 +605,8 @@ scripts/
 CONTRIBUTING.md            贡献指南
 CHANGELOG.md               更新日志
 .github/workflows/ci.yml   CI：推送到 main / PR / 手动触发时跑全部校验
+.github/workflows/deploy-pages.yml  CI 通过后自动发布到 GitHub Pages
+scripts/ci-actions.mjs     CI 所用 Actions 的版本清单（防止退回 deprecated 版本）
 LICENSE                    BSD 3-Clause（代码与文档的许可正文）
 LICENSE-SCOPE.md           许可范围说明（哪部分适用哪份许可）
 ```

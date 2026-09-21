@@ -1,0 +1,78 @@
+name: Deploy to GitHub Pages
+
+# 把纯静态站点发布到 GitHub Pages。
+# 这个项目没有构建步骤（零依赖、零打包），所以"构建"做的只是把站点文件
+# 挑出来放进一个临时目录，再交给 Pages 发布。
+#
+# 触发条件：CI 工作流跑完之后才部署，保证只有通过校验的版本才会被发布出去。
+# 也可以手动触发（workflow_dispatch）。
+on:
+  workflow_run:
+    workflows: ['CI']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 同一时间只跑一个部署，且不要取消进行中的部署（避免发布到一半被打断）
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: 构造站点产物
+    runs-on: ubuntu-latest
+    # 由 workflow_run 触发时，只有 CI 成功才部署
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v5
+
+      # 站点需要的只有下面四样：入口页、样式、前端逻辑、内容数据。
+      # scripts/ docs/ tests/ 这些只在本地开发时用，不发布到网站上。
+      - name: 挑出站点文件
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html _site/
+          cp -r styles js data _site/
+          echo "--- 产物清单 ---"
+          find _site -type f | sort
+          echo "--- 大小 ---"
+          du -sh _site
+          echo "--- 自检：入口与关键资源都在 ---"
+          for f in index.html styles/base.css styles/app.css js/app.js data/books/registry.js; do
+            test -f "_site/$f" || { echo "缺少 $f"; exit 1; }
+          done
+          echo "OK"
+
+      - name: 配置 Pages
+        uses: actions/configure-pages@v6
+
+      - name: 打包并上传产物
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    name: 发布到 Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: 部署
+        id: deployment
+        uses: actions/deploy-pages@v5
+
+      - name: 汇总
+        run: |
+          echo "### 🚀 已发布到 GitHub Pages" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "网址：${{ steps.deployment.outputs.page_url }}" >> "$GITHUB_STEP_SUMMARY"
