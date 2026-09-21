@@ -62,6 +62,9 @@ jobs:
       - name: 内容校验（字段、id 唯一性、引用完整性、富文本标记）
         run: npm run validate
 
+      - name: 数学记号排版测试（极限号的教科书样式）
+        run: npm run test-math
+
       - name: 端到端冒烟测试（44 项断言，真实执行 app.js）
         run: npm run smoke
 

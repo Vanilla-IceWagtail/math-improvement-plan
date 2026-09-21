@@ -6,7 +6,13 @@
  *   [[tip:文字]]  -> 提示块
  *   [[warn:文字]] -> 警示块
  * 其余 Markdown 语法一律不做渲染（原样显示），这样作者写错格式时不会静默丢内容。
+ *
+ * 数学记号的排版交给 js/math.js，调用顺序是：
+ *   protectMath（换成占位符）→ escapeHtml（整体转义）→ expandMath（展开成真标签）
+ * 必须在转义**之后**才插入真标签，否则属性里的引号会被转义掉。
  */
+
+import { protectMath, expandMath } from './math.js';
 
 const ALLOWED_TAGS = ['code', 'b', 'i', 'sup', 'sub', 'br', 'em', 'strong'];
 
@@ -19,7 +25,10 @@ const escapeHtml = (s) =>
     .replace(/'/g, '&#39;');
 
 /**
- * 转义全部 HTML，然后只把白名单标签还原回来。
+ * 白名单标签的转义还原。
+ *
+ * 数学排版标记不在这里处理 —— 它们由 expandMath() 在转义之后插入，
+ * 全程不经过转义，因此不必也无法在这里匹配。
  */
 function escapeKeepAllowed(raw) {
   let out = escapeHtml(raw);
@@ -28,9 +37,16 @@ function escapeKeepAllowed(raw) {
     const close = new RegExp(`&lt;/(${tag})&gt;`, 'gi');
     const selfClose = new RegExp(`&lt;(${tag})\\s*/&gt;`, 'gi');
     out = out.replace(open, '<$1>').replace(close, '</$1>').replace(selfClose, '<$1>');
-    // 允许带 class 的少量属性？不需要，保持最简。
   }
   return out;
+}
+
+/**
+ * 完整的渲染前处理：保护数学记号 → 转义 → 展开数学标签 → 处理 tip/warn 块
+ * @param {string} raw
+ */
+function prepare(raw) {
+  return blocks(expandMath(escapeKeepAllowed(protectMath(String(raw)))));
 }
 
 /** 处理 [[tip:...]] / [[warn:...]] */
@@ -47,7 +63,7 @@ function blocks(html) {
  */
 export function rich(raw) {
   if (raw == null || raw === '') return '';
-  const safe = blocks(escapeKeepAllowed(String(raw)));
+  const safe = prepare(raw);
   return safe
     .split(/\n{2,}/)
     .map((chunk) => `<p>${chunk.replace(/\n/g, '<br>')}</p>`)
@@ -57,7 +73,7 @@ export function rich(raw) {
 /** 单行渲染（不包 <p>） */
 export function richInline(raw) {
   if (raw == null) return '';
-  return blocks(escapeKeepAllowed(String(raw))).replace(/\n/g, '<br>');
+  return prepare(raw).replace(/\n/g, '<br>');
 }
 
 /** 纯文本版（用于搜索、预览、导出） */

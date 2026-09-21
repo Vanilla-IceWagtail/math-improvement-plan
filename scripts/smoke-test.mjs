@@ -162,8 +162,95 @@ async function main() {
     check('答题界面有提交按钮', main.innerHTML.includes('data-action="submit"'));
   }
 
-  /* ---------------- 7. 数据导入导出 ---------------- */
-  console.log('\n【7】数据导入导出');
+  /* ---------------- 7. 数学符号插入栏 ---------------- */
+  console.log('\n【7】数学符号插入栏（中文输入法打不出 < 的替代方案）');
+  {
+    const textQuiz = gen.buildQuiz({ size: 'small', seed: 99, types: ['fill', 'compute', 'proof'] });
+    if (textQuiz.total > 0) {
+      practice.practiceState.quiz = textQuiz;
+      practice.practiceState.answers = {};
+      practice.practiceState.finished = false;
+      win.__mathTrainer.go('practice');
+      await sleep(60);
+
+      check('答题界面出现符号栏', main.innerHTML.includes('symbol-bar'));
+      check('符号栏含小于号按钮', /data-sym="(&lt;|<)"/.test(main.innerHTML));
+      check('符号栏含 epsilon 与趋近箭头',
+        main.innerHTML.includes('data-sym="ε"') && main.innerHTML.includes('data-sym="→"'));
+
+      const symBtn = main.querySelector('.sym-btn[data-action="insert-symbol"]');
+      const textarea = main.querySelector('textarea[data-action="answer-input"]');
+      check('能找到符号按钮', Boolean(symBtn));
+      check('能找到答题框', Boolean(textarea));
+
+      if (symBtn && textarea) {
+        const qid = textarea.dataset.qid;
+        textarea.value = '0 ';
+        practice.practiceState.answers[qid] = { text: '0 ' };
+        symBtn.dispatch('click', {});
+        await sleep(30);
+        const after = textarea.value;
+        check('点符号后原有内容保留', after.startsWith('0 '), `实际="${after}"`);
+        check('点符号后符号被插入', after.length > 2, `实际="${after}"`);
+        check('插入的符号同步进了答案记录',
+          String((practice.practiceState.answers[qid] || {}).text || '') === after);
+
+        // 关键符号：小于号必须能插入，且渲染时被安全转义
+        const txt = await import('../js/text.js');
+        textarea.value = '';
+        practice.practiceState.answers[qid] = { text: '' };
+        practice.practiceActions('insert-symbol', { dataset: { qid, sym: '<' } });
+        await sleep(20);
+        check('可以插入小于号 <', textarea.value.includes('<'), `实际="${textarea.value}"`);
+        check('含小于号的答案渲染时被转义为实体',
+          txt.richInline(textarea.value).includes('&lt;'));
+      }
+    } else {
+      check('题库里存在需要手写答案的题型', false, '没有 fill/compute/proof 题型');
+    }
+  }
+
+  /* ---------------- 8. 数学记号排版 ---------------- */
+  console.log('\n【8】数学记号排版（教科书样式的极限号）');
+  {
+    const { renderMath, protectMath, expandMath } = await import('../js/math.js');
+    const txt = await import('../js/text.js');
+
+    check('lim(x→0) 渲染出 lim 与下方条件',
+      renderMath('lim(x→0) f(x)').includes('lim-op') && renderMath('lim(x→0) f(x)').includes('lim-under'));
+    check('lim(x→0) 不再残留括号写法', !renderMath('lim(x→0) f(x)').includes('lim(x→0)'));
+    check('lim<sub>x→a</sub> 被统一成同样结构', renderMath('lim<sub>x→a</sub> f(x)').includes('lim-under'));
+    check('前置式 lim f(x) 不被塞进下标', renderMath('lim f(x)') === 'lim f(x)');
+    check('两步式：先占位再展开（否则属性引号会被转义）',
+      protectMath('lim(x→0)').includes('\u0000M')
+      && expandMath(protectMath('lim(x→0)')).includes('<span class="math-lim">'));
+    check('完整管线输出里没有 &lt;span', !txt.richInline('lim(x→0) f(x)').includes('&lt;span'));
+
+    const allTexts = [];
+    for (const b of library.getBooks()) {
+      for (const ch of b.chapters) {
+        for (const sec of ch.sections) {
+          for (const it of sec.items) {
+            for (const k of ['statement', 'plain', 'why', 'proof', 'example']) if (it[k]) allTexts.push(it[k]);
+          }
+        }
+      }
+    }
+    for (const q of bank.getQuestions()) for (const k of ['stem', 'solution', 'answer']) if (q[k]) allTexts.push(q[k]);
+
+    let leftover = 0;
+    let unbalanced = 0;
+    for (const s of allTexts) {
+      const h = txt.rich(s);
+      if (/lim\s*\([^)]*→/.test(h)) leftover += 1;
+      if ((h.match(/<span/g) || []).length !== (h.match(/<\/span>/g) || []).length) unbalanced += 1;
+    }
+    check(`${allTexts.length} 段内容无残留抽象极限写法`, leftover === 0, `${leftover} 处`);
+    check(`${allTexts.length} 段内容 span 标签全部配平`, unbalanced === 0, `${unbalanced} 处`);
+  }
+
+  /* ---------------- 9. 数据导入导出 ---------------- */
+  console.log('\n【9】数据导入导出');
   const backup = storage.exportBackup();
   check('导出结构正确', backup.app === 'shuxue-peilian' && backup.data && backup.data.records);
   const before = Object.keys(storage.getState().records).length;

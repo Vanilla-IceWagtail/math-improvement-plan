@@ -22,7 +22,8 @@
     "verify-community": "node scripts/verify-community.mjs",
     "ghp": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/ghp.ps1",
     "smoke": "node scripts/smoke-test.mjs",
-    "check": "node scripts/validate-content.mjs && node scripts/smoke-test.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
+    "test-math": "node scripts/test-math.mjs",
+    "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/smoke-test.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
   },
   "engines": {
     "node": ">=18"

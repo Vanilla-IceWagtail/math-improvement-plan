@@ -160,6 +160,8 @@ check('CI 工作流存在且指定了 main 分支', /branches:\s*\[main\]/.test(
 check('CI 跑了 validate / smoke / verify-readme 三步',
   /npm run validate/.test(ciYml) && /npm run smoke/.test(ciYml) && /npm run verify-readme/.test(ciYml), 'true');
 check('CI 也跑了社区文件校验', /npm run verify-community/.test(ciYml), 'true');
+check('CI 也跑了数学排版测试', /npm run test-math/.test(ciYml), 'true');
+check('README 的 CI 步骤表列出数学排版测试', /数学记号排版/.test(readme), 'true');
 check('README 的 CI 步骤表列出社区文件校验', /社区文件校验/.test(readme), 'true');
 check('CI 守住了零依赖原则', /dependencies/.test(ciYml) && /devDependencies/.test(ciYml), 'true');
 check('CI 用 Node 20 与 22 矩阵', /'20'/.test(ciYml) && /'22'/.test(ciYml), 'true');

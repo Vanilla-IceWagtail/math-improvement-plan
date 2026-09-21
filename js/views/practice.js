@@ -42,6 +42,31 @@ const ui = {
 
 export const practiceState = ui;
 
+/**
+ * 答题框上方可点击插入的数学符号。
+ *
+ * 为什么需要它：中文输入法状态下想打 `<` 或 `ε` 往往要切回英文、或者根本找不到，
+ * 而这几个符号在写不等式与极限题时是刚需。点一下直接插入，不依赖输入法。
+ */
+const MATH_SYMBOLS = [
+  { ch: '<', tip: '小于（不用切输入法）' },
+  { ch: '>', tip: '大于' },
+  { ch: '≤', tip: '小于等于' },
+  { ch: '≥', tip: '大于等于' },
+  { ch: '≠', tip: '不等于' },
+  { ch: '→', tip: '趋近 / 趋于' },
+  { ch: '∞', tip: '无穷' },
+  { ch: 'ε', tip: 'epsilon（极限定义里的小正数）' },
+  { ch: 'δ', tip: 'delta（邻域半径）' },
+  { ch: 'Δ', tip: 'Delta（增量）' },
+  { ch: 'π', tip: '圆周率' },
+  { ch: '∫', tip: '积分号' },
+  { ch: '√', tip: '根号' },
+  { ch: '∈', tip: '属于' },
+  { ch: '±', tip: '正负' },
+  { ch: '′', tip: '导数撇号' },
+];
+
 /* ------------------------------------------------------------------ 渲染 */
 
 export function renderPractice() {
@@ -262,10 +287,16 @@ function renderQuestion({ q, stage }, no, total) {
           <button type="button" class="chip" data-action="pick" data-key="对" data-qid="${esc(q.id)}" ${a.submitted ? 'disabled' : ''} aria-pressed="${a.picked === '对'}">√ 对</button>
           <button type="button" class="chip" data-action="pick" data-key="错" data-qid="${esc(q.id)}" ${a.submitted ? 'disabled' : ''} aria-pressed="${a.picked === '错'}">× 错</button>
         </div>` : `
+        <div class="symbol-bar" role="toolbar" aria-label="插入数学符号">
+          <span class="symbol-bar-label">点一下插入符号：</span>
+          ${MATH_SYMBOLS.map((s) => `<button type="button" class="sym-btn" data-action="insert-symbol" data-sym="${esc(s.ch)}" data-qid="${esc(q.id)}" title="${esc(s.tip)}" ${a.submitted ? 'disabled' : ''}>${esc(s.ch)}</button>`).join('')}
+        </div>
         <textarea class="textarea" data-action="answer-input" data-qid="${esc(q.id)}"
-          placeholder="${q.type === 'proof' ? '把证明的主要步骤写下来，写不完整也没关系，先自己想一遍再看答案' : '写出你的答案（用键盘就能输入公式，例如 x^2/2 + C）'}"
+          placeholder="${q.type === 'proof' ? '把证明的主要步骤写下来，写不完整也没关系，先自己想一遍再看答案' : '写出你的答案：键盘输入即可，也可以点上面的符号。例如 x^2/2 + C'}"
           ${a.submitted ? 'disabled' : ''}>${esc(a.text || '')}</textarea>
-        <div style="font-size:12.5px;color:var(--c-text-faint);margin-top:4px">建议先自己在纸上算，再回来看答案对照。</div>`}
+        <div style="font-size:12.5px;color:var(--c-text-faint);margin-top:4px">
+          建议先自己在纸上算，再回来看答案对照。不等式两边的符号（&lt; &gt;）可以直接点上面的按钮，不用切输入法。
+        </div>`}
     </div>`}
 
     ${a.submitted ? renderFeedback(q, a) : `
@@ -526,6 +557,26 @@ export function practiceActions(action, el, e) {
     case 'submit':
       submitAnswer(el.dataset.qid);
       break;
+
+    case 'insert-symbol': {
+      // 把符号插入到光标处（而不是简单追加到末尾），插入后光标停在符号右侧
+      const qid = el.dataset.qid;
+      const sym = el.dataset.sym;
+      const box = document.querySelector(`textarea[data-action="answer-input"][data-qid="${qid}"]`);
+      const a = (ui.answers[qid] = ui.answers[qid] || {});
+      if (!box || box.disabled) { toast('这题已经提交了，不能再改', 'info'); return true; }
+      const start = typeof box.selectionStart === 'number' ? box.selectionStart : box.value.length;
+      const end = typeof box.selectionEnd === 'number' ? box.selectionEnd : box.value.length;
+      const next = box.value.slice(0, start) + sym + box.value.slice(end);
+      box.value = next;
+      a.text = next;
+      box.focus();
+      try { box.setSelectionRange(start + sym.length, start + sym.length); } catch { /* 某些浏览器不支持 */ }
+      // 同步提交按钮的可用状态
+      const btn = box.closest('.quiz-body')?.querySelector('[data-action="submit"]');
+      if (btn) btn.disabled = !next.trim();
+      return true;
+    }
 
     case 'give-up': {
       const qid = el.dataset.qid;
