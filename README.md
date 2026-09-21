@@ -215,11 +215,48 @@ node scripts/serve.mjs 8080
 npm start        # 启动本地服务器（默认 5173）
 npm run validate # 内容校验：字段、id 唯一性、引用完整性、富文本标记
 npm run smoke    # 端到端冒烟测试：44 项断言，真的把 app.js 跑一遍
-npm run verify-readme  # 核对本文档里的事实性陈述与代码是否一致
-npm run check    # 上面三件事依次跑一遍（提交前建议跑这个）
+npm run verify-readme     # 核对本文档里的事实性陈述与代码是否一致
+npm run verify-community  # 核对社区文件（issue 表单结构、行为准则、安全策略）
+npm run check    # 上面四件事依次跑一遍（提交前建议跑这个）
 node scripts/validate-content.mjs --strict   # 把"提示"也当成失败
 node scripts/fetch-open-bank.mjs --schema    # 查看题库 JSON 格式说明
 ```
+
+### 命令行工具的代理问题（中国大陆常见）
+
+`git` 和 `gh`（GitHub CLI）**都不读 Windows 系统代理**，只认 `HTTP_PROXY` / `HTTPS_PROXY`
+环境变量。如果你的网络需要代理才能访问 GitHub，有两种做法：
+
+**做法一：只给 git 配（推荐，作用面最小）**
+
+```bash
+git config --global http.https://github.com.proxy "http://127.0.0.1:7890"
+```
+
+只对 github.com 生效，不影响 gitee / 公司 GitLab 等其它站点。
+
+**做法二：给 gh 用包装脚本（不污染系统环境变量）**
+
+```bash
+npm run ghp -- auth status
+npm run ghp -- pr list --limit 5
+npm run ghp -- -NoProxy api user     # 临时直连
+npm run ghp -- -Check                # 只探测代理端口是否在监听
+```
+
+或直接调用 `tools\ghp.cmd <gh 参数>`。相关文件：
+
+| 文件 | 说明 |
+| --- | --- |
+| [`tools/ghp.ps1`](tools/ghp.ps1) | 只在单次调用内注入代理，**不改动用户/系统环境变量** |
+| [`tools/ghp.cmd`](tools/ghp.cmd) | cmd.exe / Git Bash 下的包装，顺带绕过 PowerShell 执行策略 |
+
+> **为什么不直接把代理写进用户环境变量？**
+> 那样一旦代理软件（Clash 等）没开，`gh` 会立刻失败，而且 `npm` / `pip` / `curl`
+> 等一切认这些变量的工具都会连锁失败。包装脚本的方式下，代理挂了只影响这一个脚本。
+>
+> 代理地址默认 `http://127.0.0.1:7890`，可用环境变量 `GHPROXY` 覆盖；
+> 设 `GHPDIRECT=1` 可强制直连。
 
 ---
 

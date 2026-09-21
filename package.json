@@ -20,6 +20,7 @@
     "validate": "node scripts/validate-content.mjs",
     "verify-readme": "node scripts/verify-readme.mjs",
     "verify-community": "node scripts/verify-community.mjs",
+    "ghp": "powershell -NoProfile -ExecutionPolicy Bypass -File ./tools/ghp.ps1",
     "smoke": "node scripts/smoke-test.mjs",
     "check": "node scripts/validate-content.mjs && node scripts/smoke-test.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
   },

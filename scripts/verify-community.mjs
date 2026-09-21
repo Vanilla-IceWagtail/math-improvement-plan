@@ -177,6 +177,39 @@ console.log('\n【交叉链接与举报渠道】');
   check('PR 模板包含版权确认清单', /原创/.test(pr) && /LICENSE/.test(pr));
 }
 
+/* ---------------- 5. 开发辅助脚本 ---------------- */
+console.log('\n【开发辅助脚本】');
+{
+  const ps = await read('tools/ghp.ps1').catch(() => null);
+  const cmd = await read('tools/ghp.cmd').catch(() => null);
+  check('tools/ghp.ps1 存在且有实质内容', ps && ps.length >= 1000);
+  check('tools/ghp.cmd 存在', Boolean(cmd));
+
+  if (ps) {
+    // PowerShell 5.1 读无 BOM 的文件会按 ANSI 解码：非 ASCII 注释会被解成乱码，
+    // 乱码字节甚至可能吞掉字符串结束引号，报出 "Unexpected token" 这种莫名其妙的语法错误。
+    // 安全条件是二选一：文件带 UTF-8 BOM，或者文件是纯 ASCII（怎么解码都不会坏）。
+    const psBytes = await readFile(new URL('../tools/ghp.ps1', import.meta.url));
+    const hasBom = psBytes[0] === 0xef && psBytes[1] === 0xbb && psBytes[2] === 0xbf;
+    const body = hasBom ? psBytes.subarray(3) : psBytes;
+    const nonAscii = [...body].filter((b) => b > 127).length;
+    check('ghp.ps1 带 BOM 或为纯 ASCII（防止 PowerShell 5.1 按 ANSI 解码出错）',
+      hasBom || nonAscii === 0,
+      `无 BOM 且含 ${nonAscii} 个非 ASCII 字节 —— 请补回 BOM 或改用英文注释`);
+
+    // Windows PowerShell 5.1 在 -File 调用下，ValueFromRemainingArguments 才能收全参数
+    check('ghp.ps1 用 ValueFromRemainingArguments 接收参数',
+      /ValueFromRemainingArguments\s*=\s*\$true/.test(ps));
+    check('ghp.ps1 注入代理后不改动用户/系统环境变量',
+      !/SetEnvironmentVariable\([^)]*['"]User['"]/.test(ps) && !/SetEnvironmentVariable\([^)]*['"]Machine['"]/.test(ps));
+    check('ghp.ps1 设置了 NO_PROXY 排除回环地址', /NO_PROXY/.test(ps) && /127\.0\.0\.1/.test(ps));
+    check('ghp.ps1 提供 -NoProxy 直连逃生通道', /-NoProxy/.test(ps));
+  }
+
+  const pkgJson = JSON.parse(await read('package.json'));
+  check('package.json 提供 npm run ghp', /tools\/ghp\.ps1/.test(pkgJson.scripts.ghp || ''));
+}
+
 /* ---------------- 汇总 ---------------- */
 const passed = results.length - failed;
 console.log(`\n═══ 社区文件校验：${passed}/${results.length} 通过 ═══`);
