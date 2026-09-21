@@ -1,7 +1,7 @@
 name: 内容纠错（数学错误 / 错别字 / 讲得不清楚）
 description: 报告某条定义、定理、证明或题目的错误，或建议把讲解改得更通俗
 title: '[内容] '
-labels: []
+labels: ['内容纠错']
 body:
   - type: markdown
     attributes:

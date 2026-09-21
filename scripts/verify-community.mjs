@@ -85,6 +85,19 @@ const VALID_TYPES = new Set(['markdown', 'input', 'textarea', 'dropdown', 'check
 /** 这些类型的元素必须有 id 与 label */
 const NEED_ID_LABEL = new Set(['input', 'textarea', 'dropdown', 'checkboxes']);
 
+/**
+ * 仓库里实际存在的标签。
+ * 为什么要在本地也存一份：GitHub 对 issue 表单里**不存在的标签是静默忽略**的
+ * —— 表单照样能打开，只是标签不会自动打上，非常难发现。
+ * 这里做静态校验，无需网络即可在 npm run check 阶段拦住笔误。
+ * 新增标签时，记得同时更新这个列表（并与 `gh label list` 核对）。
+ */
+const KNOWN_LABELS = new Set([
+  'accessibility', 'bug', 'documentation', 'duplicate', 'good first issue',
+  'help wanted', 'invalid', 'question', 'wontfix',
+  '内容纠错', '数学错误', '功能建议', '工程/CI', '优先级-高', '优先级-低',
+]);
+
 const allLabels = new Set();
 
 for (const f of tplFiles) {
@@ -94,6 +107,15 @@ for (const f of tplFiles) {
 
   if (doc.__fallback) {
     check(`${tag} 解析（无 YAML 解析器，仅做键检查）`, doc.name && doc.description && doc.body);
+    // 降级模式也要收集标签，否则"标签存在性"断言在 CI 里会退化成空集而永远通过
+    const m = /^labels:\s*(.+)$/m.exec(raw);
+    if (m) {
+      const list = [...m[1].matchAll(/['"]?([^'"[\]\s,]+)['"]?/g)].map((x) => x[1]).filter(Boolean);
+      const unknown = list.filter((l) => !KNOWN_LABELS.has(l));
+      check(`${tag} 引用的标签都真实存在（${list.join('、') || '无'}）`,
+        unknown.length === 0, `未知标签：${unknown.join('、')} —— GitHub 会静默忽略`);
+      for (const l of list) allLabels.add(l);
+    }
     continue;
   }
 
@@ -133,7 +155,13 @@ for (const f of tplFiles) {
   check(`${tag} 元素结构合法（${doc.body.length} 个元素）`, elemProblems.length === 0, elemProblems.join('; '));
   check(`${tag} 至少有一个必填项`, requiredCount > 0, 'required: true 一个都没有，用户可提交空 issue');
 
-  for (const l of [].concat(doc.labels || [])) allLabels.add(l);
+  // 标签必须真实存在，否则 GitHub 静默忽略（表单不报错、标签不生效）
+  const tplLabels = [].concat(doc.labels || []);
+  const unknown = tplLabels.filter((l) => !KNOWN_LABELS.has(l));
+  check(`${tag} 引用的标签都真实存在（${tplLabels.join('、') || '无'}）`,
+    unknown.length === 0, `未知标签：${unknown.join('、')} —— GitHub 会静默忽略，请先创建或用 KNOWN_LABELS 更新`);
+
+  for (const l of tplLabels) allLabels.add(l);
 }
 
 /* ---------------- 3. config.yml ---------------- */
@@ -177,7 +205,16 @@ console.log('\n【交叉链接与举报渠道】');
   check('PR 模板包含版权确认清单', /原创/.test(pr) && /LICENSE/.test(pr));
 }
 
-/* ---------------- 5. 开发辅助脚本 ---------------- */
+/* ---------------- 5. 标签与文档 ---------------- */
+console.log('\n【标签引用】');
+{
+  check('三个表单都配置了自动标签', allLabels.size >= 3, `只见到 ${allLabels.size} 个：${[...allLabels].join('、')}`);
+  check('内容纠错表单会打上「内容纠错」标签', allLabels.has('内容纠错'));
+  check('Bug 表单会打上 bug 标签', allLabels.has('bug'));
+  check('功能建议表单会打上「功能建议」标签', allLabels.has('功能建议'));
+}
+
+/* ---------------- 6. 开发辅助脚本 ---------------- */
 console.log('\n【开发辅助脚本】');
 {
   const ps = await read('tools/ghp.ps1').catch(() => null);

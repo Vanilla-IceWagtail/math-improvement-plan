@@ -1,7 +1,7 @@
 name: Bug 报告（功能不正常）
 description: 网站打不开、按钮点了没反应、错题本提醒不出现等
 title: '[Bug] '
-labels: []
+labels: ['bug']
 body:
   - type: markdown
     attributes:
