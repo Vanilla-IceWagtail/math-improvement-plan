@@ -25,6 +25,16 @@ const ui = {
   quiz: null,
   /** 展开到第几档 */
   stageIndex: 0,
+  /**
+   * 当前正在看第几题（题组展开后的下标）。
+   *
+   * 为什么要有这个显式游标：以前"当前题"是**推导**出来的 —— 每次渲染都去找
+   * 第一道未提交的题。结果是：一旦某题被提交（作答或点"不会，直接看答案"），
+   * 它立刻变成"已提交"，下一次渲染就跳到下一题去了，**答案与解析根本来不及看**。
+   * 症状就是「点『不会，直接看答案』后看不到答案，只有去错题本才能看到」。
+   * 现在改成：只有用户点「下一题」时 curIndex 才前进。
+   */
+  curIndex: 0,
   /** 每题作答记录 { [qid]: { picked, submitted, correct, text } } */
   answers: {},
   /** 设置面板状态 */
@@ -198,8 +208,10 @@ function renderQuiz() {
   if (ui.finished) return renderResult();
 
   const flat = flatten(quiz);
-  const idx = flat.findIndex((x) => !ui.answers[x.q.id] || !ui.answers[x.q.id].submitted);
-  const current = idx >= 0 ? flat[idx] : null;
+  // 当前题由显式游标决定，而不是"第一道未提交的题"。
+  // 否则一旦提交，渲染就会跳到下一题，答案与解析来不及看（这就是那个 bug）。
+  const idx = Math.min(Math.max(ui.curIndex, 0), Math.max(flat.length - 1, 0));
+  const current = flat[idx] || null;
   const done = flat.filter((x) => ui.answers[x.q.id] && ui.answers[x.q.id].submitted);
   const correct = done.filter((x) => ui.answers[x.q.id].correct).length;
   const stage = current ? current.stage : null;
@@ -215,16 +227,19 @@ function renderQuiz() {
         <span style="font-size:13.5px;color:var(--c-text-soft)">已答 ${done.length}/${flat.length} 题 · 答对 ${correct}</span>
       </div>
       <div class="quiz-steps" role="progressbar" aria-valuemin="0" aria-valuemax="${flat.length}" aria-valuenow="${done.length}">
-        ${flat.map((x) => {
+        ${flat.map((x, i) => {
           const a = ui.answers[x.q.id];
-          const cls = a && a.submitted ? (a.correct ? 'done-ok' : 'done-bad') : (current && x.q.id === current.q.id ? 'current' : '');
+          // 已提交的显示对错颜色；当前题（无论是否已提交）用 current 标出位置
+          const cls = a && a.submitted
+            ? (a.correct ? 'done-ok done-current' : 'done-bad done-current')
+            : (i === idx ? 'current' : '');
           return `<i class="${cls}"></i>`;
         }).join('')}
       </div>
       ${stage ? `<div style="font-size:12.5px;color:var(--c-text-faint);margin-top:8px">${icon('info', { size: 12 })} 第 ${stage.difficulty} 档：${esc(stage.desc)}</div>` : ''}
     </div>
 
-    ${current ? renderQuestion(current, flat.indexOf(current) + 1, flat.length) : renderAllDone()}
+    ${current ? renderQuestion(current, idx + 1, flat.length) : renderAllDone()}
 
     <div class="quiz-footer">
       <button type="button" class="btn btn-ghost" data-action="abort-quiz">${icon('x', { size: 15 })} 结束这组</button>
@@ -525,6 +540,7 @@ export function practiceActions(action, el, e) {
       if (!candidates.length) { toast('这个条件下没有题目，放松一下条件吧', 'warn'); return true; }
       ui.quiz = buildQuiz({ ...filter, size: f.size, title: undefined });
       ui.answers = {};
+        ui.curIndex = 0;
       ui.finished = false;
       ui.stageIndex = 0;
       setLastQuiz(ui.quiz);
@@ -537,6 +553,7 @@ export function practiceActions(action, el, e) {
       const cid = el.dataset.concept;
       ui.quiz = buildQuiz({ concepts: [cid], size: 'small', minDifficulty: 1, maxDifficulty: 4 });
       ui.answers = {};
+        ui.curIndex = 0;
       ui.finished = false;
       setLastQuiz(ui.quiz);
       toast(`围绕「${(getItem(cid) || {}).name || cid}」新开一组`, 'ok');
@@ -595,7 +612,7 @@ export function practiceActions(action, el, e) {
 
     case 'skip': {
       const flat = flatten(ui.quiz);
-      const cur = flat.find((x) => !ui.answers[x.q.id] || !ui.answers[x.q.id].submitted);
+      const cur = flat[Math.min(Math.max(ui.curIndex, 0), Math.max(flat.length - 1, 0))];
       if (!cur) { ui.finished = true; break; }
       const a = (ui.answers[cur.q.id] = ui.answers[cur.q.id] || {});
       a.submitted = true;
@@ -603,6 +620,8 @@ export function practiceActions(action, el, e) {
       a.skipped = true;
       markWrongBook(cur.q.id);
       bumpStats({ answered: 1 });
+      // 跳过之后主动前进（跳过的题不看解析）
+      advance();
       break;
     }
 
@@ -628,6 +647,7 @@ export function practiceActions(action, el, e) {
       const filter = ui.quiz ? ui.quiz.filter : formToFilter();
       ui.quiz = buildQuiz({ ...filter, size: ui.quiz ? ui.quiz.size : f.size });
       ui.answers = {};
+        ui.curIndex = 0;
       ui.finished = false;
       setLastQuiz(ui.quiz);
       bumpStats({ quizSets: 1 });
@@ -637,6 +657,7 @@ export function practiceActions(action, el, e) {
     case 'back-setup':
       ui.quiz = null;
       ui.answers = {};
+        ui.curIndex = 0;
       ui.finished = false;
       break;
 
@@ -786,19 +807,25 @@ const truncate = (s, n) => {
 /** 推进到下一题；本档答完自动进入下一档并给出提示 */
 function advance() {
   const flat = flatten(ui.quiz);
-  const cur = flat.find((x) => !ui.answers[x.q.id] || !ui.answers[x.q.id].submitted);
-  if (!cur) {
+  const cur = flat[Math.min(Math.max(ui.curIndex, 0), Math.max(flat.length - 1, 0))];
+
+  // 没有题，或已经在最后一题：结算
+  if (!cur || ui.curIndex >= flat.length - 1) {
     ui.finished = true;
     rerender();
     return;
   }
-  // 是否刚好完成某一档
+
+  // 是否刚好完成某一档（在前进之前判断）
   const stage = cur.stage;
   const stageDone = stage.questions.every((id) => {
     const a = ui.answers[id];
     return a && a.submitted;
   });
+
+  ui.curIndex += 1;
   rerender();
+
   if (stageDone) {
     const stageIdx = (ui.quiz.stages || []).findIndex((s) => s.difficulty === stage.difficulty);
     const next = (ui.quiz.stages || [])[stageIdx + 1];

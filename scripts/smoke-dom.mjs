@@ -114,7 +114,7 @@ class Node {
     return null;
   }
   matches(sel) {
-    return String(sel).split(',').some((s) => matchSimple(this, s.trim()));
+    return String(sel).split(',').some((s) => matchesComplex(this, s.trim()));
   }
   querySelector(sel) { return this.querySelectorAll(sel)[0] || null; }
   querySelectorAll(sel) {
@@ -160,6 +160,27 @@ class Node {
     }
     return out.replace(/\s+/g, ' ').trim();
   }
+}
+
+/**
+ * 支持后代组合符的选择器匹配：如 `.modal-head h2`、`.quiz-body textarea`。
+ *
+ * 之前只支持单一复合选择器，导致 `.modal-head h2` 匹配失败 ——
+ * openModal() 里 `mask.querySelector('.modal-head h2')` 拿到 null 直接抛异常，
+ * 弹窗路径在测试里跑不通。这里按空白拆开，从右往左逐段验证祖先后代关系。
+ */
+function matchesComplex(el, sel) {
+  const parts = String(sel).trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return false;
+  if (!matchSimple(el, parts[parts.length - 1])) return false;
+  // 剩下的部分必须依次出现在祖先里（不要求相邻，符合后代选择器语义）
+  let idx = parts.length - 2;
+  let node = el.parentNode;
+  while (idx >= 0 && node && node.nodeType === 1) {
+    if (matchSimple(node, parts[idx])) idx -= 1;
+    node = node.parentNode;
+  }
+  return idx < 0;
 }
 
 /** 只支持本项目用到的选择器：#id .class tag [attr] [attr="v"] */

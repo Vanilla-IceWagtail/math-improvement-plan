@@ -249,6 +249,73 @@ async function main() {
     check(`${allTexts.length} 段内容 span 标签全部配平`, unbalanced === 0, `${unbalanced} 处`);
   }
 
+  /* ---------------- 8.5 答题后能看到答案（曾经的 bug） ---------------- */
+  console.log('\n【8.5】答题后能看到答案与解析');
+  {
+    // 曾经的 bug：点「不会，直接看答案」后页面立刻跳到下一题，
+    // 因为"当前题"是推导出来的（找第一道未提交的题），提交后它就不再是当前题了。
+    // 用户只能去错题本才看得到答案。现在"当前题"由显式游标 ui.curIndex 决定。
+    const revealQuiz = gen.buildQuiz({ size: 'small', seed: 314, types: ['fill', 'compute', 'proof'] });
+    const order = [];
+    for (const st of revealQuiz.stages) for (const id of st.questions) order.push(id);
+
+    const loadQuiz = () => {
+      practice.practiceState.quiz = revealQuiz;
+      practice.practiceState.answers = {};
+      practice.practiceState.curIndex = 0;
+      practice.practiceState.finished = false;
+      win.__mathTrainer.go('practice');
+    };
+
+    loadQuiz();
+    await sleep(60);
+    const qid = order[0];
+    const q = bank.getQuestion(qid);
+
+    check('渲染出「不会，直接看答案」按钮', main.innerHTML.includes('data-action="give-up"'));
+    check('点击前页面上没有答案', !main.innerHTML.includes('answer-feedback'));
+
+    practice.practiceActions('give-up', { dataset: { qid } });
+    await sleep(60);
+
+    check('点「不会，直接看答案」后仍停留在同一题',
+      main.innerHTML.includes(`data-qid="${qid}"`), '页面跳到别的题去了');
+    check('点「不会，直接看答案」后显示答案区块', main.innerHTML.includes('answer-feedback'));
+    check('点「不会，直接看答案」后显示「正确答案」', main.innerHTML.includes('正确答案'));
+    check('点「不会，直接看答案」后出现「下一题」按钮', main.innerHTML.includes('data-action="next"'));
+    check('答案文本确实出现在页面上',
+      main.innerHTML.includes(String(q.answer).replace(/<[^>]+>/g, '').slice(0, 8)));
+
+    // 只有点「下一题」才前进
+    check('此刻游标仍是第 1 题', practice.practiceState.curIndex === 0);
+    practice.practiceActions('next', { dataset: {} });
+    await sleep(60);
+    check('点「下一题」后游标前进到第 2 题', practice.practiceState.curIndex === 1);
+    check('页面切到第 2 题', main.innerHTML.includes(`data-qid="${order[1]}"`));
+
+    // 正常提交路径也要能看到答案
+    loadQuiz();
+    await sleep(60);
+    const box = main.querySelector('textarea[data-action="answer-input"]');
+    if (box) {
+      box.value = '我的作答';
+      practice.practiceState.answers[qid] = { text: '我的作答' };
+      practice.practiceActions('submit', { dataset: { qid } });
+      await sleep(60);
+      check('提交答案后仍停留在同一题', main.innerHTML.includes(`data-qid="${qid}"`));
+      check('提交答案后显示答案区块', main.innerHTML.includes('answer-feedback'));
+    } else {
+      check('存在答题框用于提交', false, '没找到 textarea');
+    }
+
+    // 最后一题点下一题应进入结果页，且游标不越界
+    practice.practiceState.curIndex = order.length - 1;
+    practice.practiceActions('next', { dataset: {} });
+    await sleep(60);
+    check('最后一题点「下一题」进入结果页', practice.practiceState.finished === true);
+    check('游标未越界', practice.practiceState.curIndex <= order.length);
+  }
+
   /* ---------------- 9. 数据导入导出 ---------------- */
   console.log('\n【9】数据导入导出');
   const backup = storage.exportBackup();

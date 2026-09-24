@@ -203,7 +203,7 @@ node scripts/serve.mjs 8080
 | 校验零依赖原则 | 检查 `package.json` 里没有 `dependencies` / `devDependencies` |
 | 内容校验 | 204 条教材条目 + 194 道题的结构、id 唯一性、引用完整性、富文本标记 |
 | 数学记号排版测试 | 极限号的教科书样式渲染（单元用例 + 全量回归） |
-| 端到端冒烟测试 | 62 项断言，真实执行 `js/app.js` |
+| 端到端冒烟测试 | 76 项断言，真实执行 `js/app.js` |
 | README 事实核对 | 文档里的数字、示例、路径必须与代码一致 |
 | 社区文件校验 | issue 表单结构、行为准则、安全策略、交叉链接 |
 
@@ -241,7 +241,7 @@ node scripts/serve.mjs 8080
 ```bash
 npm start        # 启动本地服务器（默认 5173）
 npm run validate # 内容校验：字段、id 唯一性、引用完整性、富文本标记
-npm run smoke    # 端到端冒烟测试：62 项断言，真的把 app.js 跑一遍
+npm run smoke    # 端到端冒烟测试：76 项断言，真的把 app.js 跑一遍
 npm run verify-readme     # 核对本文档里的事实性陈述与代码是否一致
 npm run verify-community  # 核对社区文件（issue 表单结构、行为准则、安全策略）
 npm run check    # 上面四件事依次跑一遍（提交前建议跑这个）
@@ -663,7 +663,7 @@ docs/
 scripts/
   serve.mjs                零依赖静态服务器
   validate-content.mjs     内容校验器
-  smoke-test.mjs           端到端冒烟测试（62 项断言）
+  smoke-test.mjs           端到端冒烟测试（76 项断言）
   smoke-dom.mjs            冒烟测试用的轻量 DOM 垫片
   verify-readme.mjs        核对 README 的事实性陈述（防止文档随代码漂移）
   fetch-open-bank.mjs      开放许可题库导入管道
