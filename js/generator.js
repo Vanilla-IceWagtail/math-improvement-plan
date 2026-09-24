@@ -14,7 +14,7 @@
  */
 
 import { getQuestions, getQuestion, questionsOfConcept, questionsOfChapter } from './bank.js';
-import { getItem } from './library.js';
+import { getItem, getChapter } from './library.js';
 
 /** 确定性伪随机（mulberry32），保证同 seed 同题组 */
 function rng(seed) {
@@ -68,13 +68,19 @@ export const SET_SIZES = [
 
 /**
  * 收集候选题目
- * @param {{concepts?:string[], chapterIds?:string[], bookId?:string, includeImported?:boolean, types?:string[]}} filter
+ * @param {{concepts?:string[], chapterIds?:string[], sectionIds?:string[], bookId?:string,
+ *          includeImported?:boolean, types?:string[]}} filter
  */
 export function collectCandidates(filter = {}) {
   let pool = getQuestions();
   if (filter.bookId) pool = pool.filter((q) => !q.bookId || q.bookId === filter.bookId);
   if (filter.chapterIds && filter.chapterIds.length) {
     pool = pool.filter((q) => filter.chapterIds.includes(q.chapterId));
+  }
+  // 小节是比章更细的一层。调用方（practice 视图）保证不会同时传两层；
+  // 万一同时传了，这里取交集更符合直觉（"第 3 章的 3.1 节"）。
+  if (filter.sectionIds && filter.sectionIds.length) {
+    pool = pool.filter((q) => filter.sectionIds.includes(q.sectionId));
   }
   if (filter.concepts && filter.concepts.length) {
     const set = new Set(filter.concepts);
@@ -159,6 +165,7 @@ export function buildQuiz(opt = {}) {
     filter: {
       concepts: opt.concepts || [],
       chapterIds: opt.chapterIds || [],
+      sectionIds: opt.sectionIds || [],
       bookId: opt.bookId || '',
       types: opt.types || [],
       minDifficulty: minD,
@@ -175,9 +182,34 @@ function autoTitle(opt, stages) {
     const names = opt.concepts.map((c) => (getItem(c) || {}).name).filter(Boolean);
     if (names.length) return names.slice(0, 2).join(' / ') + (names.length > 2 ? ' 等' : '');
   }
-  if (opt.chapterIds && opt.chapterIds.length) return `${opt.chapterIds.length} 个章节的综合题组`;
+  // 小节标题比章标题更具体，优先用它当题组名
+  if (opt.sectionIds && opt.sectionIds.length) {
+    const names = opt.sectionIds.map(sectionTitleOf).filter(Boolean);
+    if (names.length) {
+      return names.slice(0, 2).join(' / ') + (names.length > 2 ? ` 等 ${names.length} 节` : '');
+    }
+    return `${opt.sectionIds.length} 个小节的题组`;
+  }
+  if (opt.chapterIds && opt.chapterIds.length) {
+    const names = opt.chapterIds.map(chapterTitleOf).filter(Boolean);
+    if (names.length && names.length <= 2) return names.join(' / ');
+    return `${opt.chapterIds.length} 个章节的综合题组`;
+  }
   if (stages.length) return '综合递进题组';
   return '题组';
+}
+
+/** 取小节的 "3.1 微分中值定理" 这样的短标题 */
+function sectionTitleOf(sectionId) {
+  const found = getChapter(sectionId.slice(0, sectionId.lastIndexOf('-')) || '');
+  const sec = found && found.chapter.sections.find((s) => s.id === sectionId);
+  return sec ? `${sec.no} ${sec.title}` : '';
+}
+
+/** 取章的 "第 3 章 微分中值定理与导数的应用" */
+function chapterTitleOf(chapterId) {
+  const found = getChapter(chapterId);
+  return found ? `第 ${found.chapter.no} 章 ${found.chapter.title}` : '';
 }
 
 /** 把题组展开成有序的 {question, stage} 数组（保留档位信息） */

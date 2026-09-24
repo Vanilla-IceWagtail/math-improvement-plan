@@ -76,6 +76,9 @@ const CONCEPT_ALIASES = aliasMod.CONCEPT_ALIASES || {};
 const canon = (id) => CONCEPT_ALIASES[id] || id;
 
 const allItemIds = new Set();
+/** 教材里真实存在的小节 id -> 所属章 id（用于校验题目的 sectionId） */
+const allSectionIds = new Set();
+const sectionOwner = new Map();
 const allItems = [];
 const bookReports = [];
 
@@ -106,6 +109,12 @@ for (const entry of bookEntries) {
 
     let count = 0;
     for (const sec of ch.sections) {
+      // 登记小节，供后面校验题目的 sectionId 用
+      if (sec.id) {
+        if (allSectionIds.has(sec.id)) err(`${rel}: 小节 id 重复：${sec.id}`);
+        allSectionIds.add(sec.id);
+        sectionOwner.set(sec.id, ch.id);
+      }
       if (!sec.id) err(`${rel}: 有 section 缺 id`);
       if (!sec.title) err(`${rel}: section ${sec.id} 缺 title`);
       if (!Array.isArray(sec.items)) { err(`${rel}: section ${sec.id} 缺 items 数组`); continue; }
@@ -190,6 +199,15 @@ for (const rel of questionFiles) {
     if (allQuestionIds.has(q.id)) err(`${where}: id 重复`);
     allQuestionIds.add(q.id);
     if (!q.chapterId) warn(`${where}: 缺 chapterId`);
+    // 小节必须真实存在，且必须属于所标的章 —— 否则"按小节出题"会永远筛不到这道题。
+    // 这个错误曾经真实发生过：3 道题标了 ch6-4，而第 6 章只有 3 节。
+    if (!q.sectionId) {
+      warn(`${where}: 缺 sectionId（按小节出题时筛不到它）`);
+    } else if (!allSectionIds.has(q.sectionId)) {
+      err(`${where}: sectionId '${q.sectionId}' 在教材里不存在`);
+    } else if (q.chapterId && sectionOwner.get(q.sectionId) !== q.chapterId) {
+      err(`${where}: sectionId '${q.sectionId}' 属于 ${sectionOwner.get(q.sectionId)}，与 chapterId '${q.chapterId}' 不一致`);
+    }
     if (!q.stem) err(`${where}: 缺 stem`);
     if (q.answer == null || q.answer === '') err(`${where}: 缺 answer`);
     if (!q.solution) warn(`${where}: 缺 solution（解析）`);

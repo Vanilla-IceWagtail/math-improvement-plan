@@ -41,6 +41,7 @@ async function main() {
   console.log('【1】内容加载');
   const library = await import('../js/library.js');
   const bank = await import('../js/bank.js');
+  const practice = await import('../js/views/practice.js');
   const books = library.getBooks();
   check('教材已加载', books.length >= 1, `books=${books.length}`);
   const book = books[0];
@@ -81,7 +82,16 @@ async function main() {
   await sleep(50);
   check('组题组：出现标题', main.innerHTML.includes('组题组'));
   check('组题组：有出题设置按钮', main.innerHTML.includes('生成我的题组'));
-  check('组题组：有知识点可选', main.innerHTML.includes('data-action="concept-toggle"'));
+  // 默认是"按章节 / 小节"模式，所以先看到章节树
+  check('组题组：默认显示章节 / 小节选择器', main.innerHTML.includes('chapter-picker')
+    && main.innerHTML.includes('data-action="section-toggle"'));
+  check('组题组：有章节搜索框', main.innerHTML.includes('data-action="chapter-search"'));
+  // 切到"按知识点"模式后才有知识点按钮
+  practice.practiceActions('mode', { dataset: { mode: 'concept' } });
+  await sleep(50);
+  check('组题组：切到知识点模式后可选知识点', main.innerHTML.includes('data-action="concept-toggle"'));
+  practice.practiceActions('mode', { dataset: { mode: 'chapter' } });
+  await sleep(50);
   check('组题组：侧栏显示题库现状', main.innerHTML.includes('题库现状'));
 
   win.__mathTrainer.go('notebook');
@@ -145,7 +155,6 @@ async function main() {
 
   /* ---------------- 6. 答题与自动进错题本 ---------------- */
   console.log('\n【6】答题闭环');
-  const practice = await import('../js/views/practice.js');
   win.__mathTrainer.go('practice');
   await sleep(50);
   // 直接给视图塞一个确定的小题组，避免依赖随机抽题

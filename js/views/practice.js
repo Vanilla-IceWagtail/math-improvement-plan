@@ -39,9 +39,20 @@ const ui = {
   answers: {},
   /** 设置面板状态 */
   form: {
-    mode: 'concept',       // concept | chapter | mixed
+    mode: 'chapter',       // concept | chapter | mixed
     concepts: [],
     chapterIds: [],
+    /**
+     * 选中的小节（如 ch3-1）。
+     * 与 chapterIds 的关系：小节是"更细的一层"。
+     * 只要选了小节点，出题范围就以小节为准（见 formToFilter）；
+     * 两个都为空则视为全书。
+     */
+    sectionIds: [],
+    /** 章节选择器里展开了哪几章（树形折叠状态，纯 UI） */
+    openChapters: [],
+    /** 章节选择器的关键字过滤 */
+    chapterKeyword: '',
     types: [],
     size: 'medium',
     minDifficulty: 1,
@@ -105,17 +116,20 @@ function renderSetup() {
   const stats = bankStats();
   const f = ui.form;
 
-  const chapterOptions = book
-    ? book.chapters.map((c) => `<option value="${esc(c.id)}"${f.chapterIds.includes(c.id) ? ' selected' : ''}>第 ${c.no} 章 ${esc(c.title)}（${countOfChapter(c.id)} 题）</option>`).join('')
-    : '';
+  // 首次进入章节模式时，所有章都是折叠的 —— 用户看不出"能点开选小节"。
+  // 所以自动展开第一章当示范（只补一次，之后尊重用户的折叠状态）。
+  if (f.mode === 'chapter' && book && !f.openChapters.length && !f.chapterKeyword) {
+    const first = book.chapters[0];
+    if (first) f.openChapters = [first.id];
+  }
 
   return `
   <div class="card setup-panel">
     <div class="field">
       <span class="field-label">① 想练什么？</span>
       <div class="chips" role="group" aria-label="出题范围">
-        <button type="button" class="chip" data-action="mode" data-mode="concept" aria-pressed="${f.mode === 'concept'}">${icon('lightbulb', { size: 14 })} 按知识点（推荐）</button>
-        <button type="button" class="chip" data-action="mode" data-mode="chapter" aria-pressed="${f.mode === 'chapter'}">${icon('layers', { size: 14 })} 按章节</button>
+        <button type="button" class="chip" data-action="mode" data-mode="chapter" aria-pressed="${f.mode === 'chapter'}">${icon('layers', { size: 14 })} 按章节 / 小节（推荐）</button>
+        <button type="button" class="chip" data-action="mode" data-mode="concept" aria-pressed="${f.mode === 'concept'}">${icon('lightbulb', { size: 14 })} 按知识点</button>
         <button type="button" class="chip" data-action="mode" data-mode="mixed" aria-pressed="${f.mode === 'mixed'}">${icon('sparkles', { size: 14 })} 全书混合</button>
       </div>
     </div>
@@ -129,9 +143,15 @@ function renderSetup() {
       </div>
     </div>` : f.mode === 'chapter' ? `
     <div class="field">
-      <span class="field-label">② 选择章节（可多选）</span>
-      <select class="select" multiple size="7" data-action="chapter-select" id="chapter-select">${chapterOptions}</select>
-      <span style="font-size:12.5px;color:var(--c-text-faint)">按住 Ctrl / ⌘ 可以多选</span>
+      <span class="field-label">② 选章节 / 小节（先选章，再点开选具体小节；可多选）</span>
+      <div class="chapter-picker">${renderChapterTree(book)}</div>
+      <div class="row row-wrap" style="gap:6px;margin-top:4px">
+        <button type="button" class="btn btn-sm" data-action="chapter-expand-all">展开全部章节</button>
+        <button type="button" class="btn btn-sm" data-action="chapter-collapse-all">收起</button>
+        <button type="button" class="btn btn-sm" data-action="chapter-clear">清空选择</button>
+        <span class="spacer"></span>
+        <span style="font-size:12.5px;color:var(--c-text-faint)">${describeChapterSelection()}</span>
+      </div>
     </div>` : `
     <div class="field">
       <span class="field-label">② 全书混合：${esc(book ? book.title : '')}，共 ${stats.total} 道题</span>
@@ -171,6 +191,95 @@ function renderSetup() {
 }
 
 const countOfChapter = (chapterId) => collectCandidates({ chapterIds: [chapterId] }).length;
+const countOfSection = (sectionId) => collectCandidates({ sectionIds: [sectionId] }).length;
+
+/* ---------------- 章节 / 小节 两级选择器 ----------------
+   为什么不用 <select multiple>：那样只能选章，选不到小节，而且"按住 Ctrl 多选"
+   在手机上根本没法用。这里做成可展开的树：
+     章（带全选勾） → 展开后是各小节（带题量）
+   章与小节是两层取舍：只要勾了小节，出题范围就以小节为准；
+   只勾章则按整章出题。见 formToFilter()。 */
+
+/** 某章的小节是否"部分选中"（用于章的中间态） */
+function chapterSelectionState(book, chapter) {
+  const f = ui.form;
+  if (f.chapterIds.includes(chapter.id)) return 'all';
+  const secIds = chapter.sections.map((s) => s.id);
+  const picked = secIds.filter((id) => f.sectionIds.includes(id));
+  if (!picked.length) return 'none';
+  if (picked.length === secIds.length) return 'all';
+  return 'partial';
+}
+
+/** 顶部那句"当前已选 X 章 / Y 小节，共 Z 题" */
+function describeChapterSelection() {
+  const f = ui.form;
+  const hasChapter = f.chapterIds.length > 0;
+  const hasSection = f.sectionIds.length > 0;
+  if (!hasChapter && !hasSection) return '未选择 = 全书出题';
+  const n = collectCandidates(formToFilter()).length;
+  const parts = [];
+  if (hasChapter) parts.push(`${f.chapterIds.length} 章`);
+  if (hasSection) parts.push(`${f.sectionIds.length} 小节`);
+  return `已选 ${parts.join(' + ')}，共 ${n} 题`;
+}
+
+function renderChapterTree(book) {
+  if (!book) return '<div class="chapter-picker-empty">教材还没加载出来</div>';
+  const f = ui.form;
+  const kw = String(f.chapterKeyword || '').trim().toLowerCase();
+
+  // 关键字过滤：章名或其小节名命中即保留
+  const chapters = book.chapters.filter((c) => {
+    if (!kw) return true;
+    if (String(c.title).toLowerCase().includes(kw)) return true;
+    return c.sections.some((s) => String(s.title).toLowerCase().includes(kw));
+  });
+
+  if (!chapters.length) return '<div class="chapter-picker-empty">没有匹配的章节，换个词试试</div>';
+
+  return `
+  <div class="chapter-picker-head">
+    <input class="input" type="search" placeholder="搜索章节名或小节名，例如：极限、中值定理、微分方程" data-action="chapter-search" value="${esc(f.chapterKeyword || '')}">
+  </div>
+  <div class="chapter-picker-body">
+    ${chapters.map((c) => {
+      const st = chapterSelectionState(book, c);
+      const open = f.openChapters.includes(c.id) || Boolean(kw);
+      const total = countOfChapter(c.id);
+      return `
+      <div class="cp-chapter">
+        <div class="cp-chapter-row">
+          <button type="button" class="cp-expand" data-action="chapter-toggle-open" data-chapter="${esc(c.id)}"
+            aria-expanded="${open}" title="${open ? '收起' : '展开小节'}">
+            ${icon(open ? 'chevronDown' : 'chevronRight', { size: 14 })}
+          </button>
+          <label class="cp-check">
+            <input type="checkbox" data-action="chapter-toggle" data-chapter="${esc(c.id)}"
+              ${st === 'all' ? 'checked' : ''} data-partial="${st === 'partial'}">
+            <span class="cp-chapter-name">第 ${c.no} 章 ${esc(c.title)}</span>
+          </label>
+          <span class="cp-count">${total} 题</span>
+        </div>
+        ${open ? `
+        <div class="cp-sections">
+          ${c.sections.map((s) => {
+            const n = countOfSection(s.id);
+            const on = f.sectionIds.includes(s.id) || f.chapterIds.includes(c.id);
+            const disabled = n === 0;
+            return `
+            <label class="cp-check cp-section${disabled ? ' is-empty' : ''}">
+              <input type="checkbox" data-action="section-toggle" data-section="${esc(s.id)}" data-chapter="${esc(c.id)}"
+                ${on ? 'checked' : ''} ${disabled ? 'disabled' : ''}>
+              <span class="cp-section-name"><span class="cp-section-no">${esc(s.no || '')}</span> ${esc(s.title)}</span>
+              <span class="cp-count">${n ? n + ' 题' : '暂无题'}</span>
+            </label>`;
+          }).join('')}
+        </div>` : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
 
 function renderConceptChips(keyword) {
   const kw = String(keyword || '').trim().toLowerCase();
@@ -197,7 +306,11 @@ function formToFilter() {
   const f = ui.form;
   const base = { minDifficulty: f.minDifficulty, maxDifficulty: f.maxDifficulty, types: f.types };
   if (f.mode === 'concept') return { ...base, concepts: f.concepts };
-  if (f.mode === 'chapter') return { ...base, chapterIds: f.chapterIds };
+  if (f.mode === 'chapter') {
+    // 小节比章更细：只要勾了小节，就以小节为准（避免"选了 ch3-1 却出了整章的题"）
+    if (f.sectionIds.length) return { ...base, sectionIds: f.sectionIds };
+    return { ...base, chapterIds: f.chapterIds };
+  }
   return base;
 }
 
@@ -491,8 +604,73 @@ export function practiceActions(action, el, e) {
   const f = ui.form;
 
   switch (action) {
-    case 'mode':
+    case 'mode': {
       f.mode = el.dataset.mode;
+      // 切到章节模式时，默认展开第一章（只在还没展开任何章时补一次），
+      // 省得用户进来看到一个全是折叠的树不知道能点开
+      if (f.mode === 'chapter' && !f.openChapters.length) {
+        const books = getBooks();
+        const b = books.find((x) => x.id === getState().settings.bookId) || books[0];
+        if (b && b.chapters[0]) f.openChapters = [b.chapters[0].id];
+      }
+      break;
+    }
+
+    /* ---------- 章节 / 小节两级选择 ---------- */
+
+    case 'chapter-toggle': {
+      // 勾选整章 = 选中该章；同时清掉它下面已单独勾选的小节，避免两层含义打架
+      const cid = el.dataset.chapter;
+      const book = getBooks().find((b) => b.id === getState().settings.bookId) || getBooks()[0];
+      const chapter = book && book.chapters.find((c) => c.id === cid);
+      const on = !f.chapterIds.includes(cid);
+      if (on) {
+        f.chapterIds = [...f.chapterIds, cid];
+        if (chapter) {
+          const ids = new Set(chapter.sections.map((s) => s.id));
+          f.sectionIds = f.sectionIds.filter((s) => !ids.has(s));
+        }
+      } else {
+        f.chapterIds = f.chapterIds.filter((x) => x !== cid);
+      }
+      break;
+    }
+
+    case 'section-toggle': {
+      const sid = el.dataset.section;
+      const cid = el.dataset.chapter;
+      const on = !f.sectionIds.includes(sid);
+      if (on) {
+        f.sectionIds = [...f.sectionIds, sid];
+        // 从"整章选中"退化为"只选其中几节"：把该章从 chapterIds 移出
+        f.chapterIds = f.chapterIds.filter((x) => x !== cid);
+      } else {
+        f.sectionIds = f.sectionIds.filter((x) => x !== sid);
+      }
+      break;
+    }
+
+    case 'chapter-toggle-open': {
+      const cid = el.dataset.chapter;
+      f.openChapters = f.openChapters.includes(cid)
+        ? f.openChapters.filter((x) => x !== cid)
+        : [...f.openChapters, cid];
+      break;
+    }
+
+    case 'chapter-expand-all': {
+      const book = getBooks().find((b) => b.id === getState().settings.bookId) || getBooks()[0];
+      if (book) f.openChapters = book.chapters.map((c) => c.id);
+      break;
+    }
+
+    case 'chapter-collapse-all':
+      f.openChapters = [];
+      break;
+
+    case 'chapter-clear':
+      f.chapterIds = [];
+      f.sectionIds = [];
       break;
 
     case 'concept-toggle': {
@@ -689,8 +867,18 @@ export function practiceInput(action, el) {
     if (box) box.innerHTML = renderConceptChips(el.value);
     return true;
   }
-  if (action === 'chapter-select') {
-    ui.form.chapterIds = Array.from(el.selectedOptions).map((o) => o.value);
+  if (action === 'chapter-search') {
+    ui.form.chapterKeyword = el.value;
+    // 只重绘章节树，然后立刻把焦点与光标还回搜索框
+    // （整页重渲染会让输入框失焦，打字就断了）
+    const box = el.closest('.chapter-picker');
+    if (box) {
+      const books = getBooks();
+      const book = books.find((b) => b.id === getState().settings.bookId) || books[0];
+      box.innerHTML = renderChapterTree(book);
+      const again = box.querySelector('[data-action="chapter-search"]');
+      if (again) { again.focus(); again.setSelectionRange(again.value.length, again.value.length); }
+    }
     return true;
   }
   return false;

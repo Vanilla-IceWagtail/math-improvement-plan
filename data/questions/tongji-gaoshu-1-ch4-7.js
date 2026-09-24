@@ -898,7 +898,7 @@ export default {
     {
       id: 'q-ch6-016',
       chapterId: 'ch6',
-      sectionId: 'ch6-4',
+      sectionId: 'ch6-3',
       concepts: ['form-work'],
       tags: ['定积分应用', '变力做功'],
       type: 'compute',
@@ -926,7 +926,7 @@ export default {
     {
       id: 'q-ch6-018',
       chapterId: 'ch6',
-      sectionId: 'ch6-4',
+      sectionId: 'ch6-3',
       concepts: ['form-water-pressure'],
       tags: ['定积分应用', '水压力'],
       type: 'compute',
@@ -940,7 +940,7 @@ export default {
     {
       id: 'q-ch6-019',
       chapterId: 'ch6',
-      sectionId: 'ch6-4',
+      sectionId: 'ch6-3',
       concepts: ['form-gravity'],
       tags: ['定积分应用', '形心', '静力矩'],
       type: 'compute',

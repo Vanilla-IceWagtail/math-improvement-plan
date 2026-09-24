@@ -384,6 +384,62 @@ code:has(.math-lim) { padding: 0; }
 .setup-panel .field + .field { margin-top: var(--sp-4); }
 .setup-actions { display: flex; gap: var(--sp-3); align-items: center; margin-top: var(--sp-5); flex-wrap: wrap; }
 
+/* ---------- 章节 / 小节 两级选择器 ----------
+   为什么不用 <select multiple>：那样只能选章、选不到小节，
+   而且"按住 Ctrl 多选"在手机上根本没法用。 */
+.chapter-picker {
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-sm);
+  background: var(--c-surface);
+  overflow: hidden;
+}
+.chapter-picker-head {
+  padding: var(--sp-2);
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface-2);
+}
+.chapter-picker-body { max-height: 340px; overflow: auto; }
+.chapter-picker-empty {
+  padding: var(--sp-4);
+  color: var(--c-text-faint);
+  font-size: 13.5px;
+  text-align: center;
+}
+.cp-chapter { border-bottom: 1px solid var(--c-border); }
+.cp-chapter:last-child { border-bottom: 0; }
+.cp-chapter-row { display: flex; align-items: center; gap: 6px; padding: 6px var(--sp-2) 6px 4px; }
+.cp-chapter-row:hover { background: var(--c-bg-alt); }
+.cp-expand {
+  width: 26px; height: 26px; flex: none;
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--r-xs);
+  background: transparent; color: var(--c-text-soft); cursor: pointer;
+}
+.cp-expand:hover { background: var(--c-border); color: var(--c-text); }
+.cp-check {
+  display: flex; align-items: center; gap: 7px;
+  flex: 1; min-width: 0; cursor: pointer; font-size: 14px;
+}
+.cp-chapter-name { font-weight: 600; }
+.cp-count { flex: none; font-size: 12px; color: var(--c-text-faint); font-variant-numeric: tabular-nums; }
+.cp-sections { padding: 2px 0 8px 34px; background: var(--c-surface-2); }
+.cp-section {
+  padding: 4px 8px 4px 0;
+  font-size: 13.4px;
+  color: var(--c-text-soft);
+  border-radius: var(--r-xs);
+}
+.cp-section:hover { background: var(--c-bg-alt); color: var(--c-text); }
+.cp-section .cp-section-name { flex: 1; min-width: 0; }
+.cp-section-no {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--c-primary);
+  font-weight: 700;
+}
+.cp-section.is-empty { opacity: .5; cursor: not-allowed; }
+.chapter-picker input[type="checkbox"] { flex: none; width: 15px; height: 15px; accent-color: var(--c-primary); }
+
 .quiz-card { overflow: hidden; }
 .quiz-progress { padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--c-border); background: var(--c-surface-2); }
 .quiz-progress .row { gap: var(--sp-3); }

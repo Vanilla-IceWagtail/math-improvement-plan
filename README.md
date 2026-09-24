@@ -41,7 +41,11 @@
 | 第 3 档 | 提高 | 要选对方法，多步推理 |
 | 第 4 档 | 挑战 | 综合多个知识点或带陷阱 |
 
-- **出题范围**：按知识点（推荐，选 1~3 条定义/定理）／按章节（可多选）／全书混合
+- **出题范围**三种模式：
+  - **按章节 / 小节**（默认）—— 树形选择器：先勾章，点开后可细选到具体小节；
+    章的复选框支持"部分选中"中间态；带关键字搜索（章名、小节名都能搜）；每章每节显示题量
+  - **按知识点** —— 选 1~3 条定义/定理，围绕它们组一条难度阶梯
+  - **全书混合** —— 从所有章节挑题，难度仍按梯队往上走
 - **题量**：小份 6 题 / 中份 8 题 / 大份 12 题（实际题量受该知识点题量限制）
 - **题型筛选**：选择题 / 填空题 / 判断题 / 计算题 / 证明题
 - **难度范围**：四档自由勾选
@@ -203,12 +207,13 @@ node scripts/serve.mjs 8080
 | 校验零依赖原则 | 检查 `package.json` 里没有 `dependencies` / `devDependencies` |
 | 内容校验 | 204 条教材条目 + 194 道题的结构、id 唯一性、引用完整性、富文本标记 |
 | 数学记号排版测试 | 极限号的教科书样式渲染（单元用例 + 全量回归） |
-| 端到端冒烟测试 | 76 项断言，真实执行 `js/app.js` |
+| 章节 / 小节选择器测试 | 树形选择器交互 + "按小节出题"的端到端校验 |
+| 端到端冒烟测试 | 78 项断言，真实执行 `js/app.js` |
 | README 事实核对 | 文档里的数字、示例、路径必须与代码一致 |
 | 社区文件校验 | issue 表单结构、行为准则、安全策略、交叉链接 |
 
 在 **Node 20 与 Node 22** 上各跑一遍（矩阵构建），任一失败即 CI 失败。
-`npm run check` 在本地等价于后五步。
+`npm run check` 在本地等价于后六步。
 
 ### 数学记号怎么写的（给贡献者）
 
@@ -241,10 +246,12 @@ node scripts/serve.mjs 8080
 ```bash
 npm start        # 启动本地服务器（默认 5173）
 npm run validate # 内容校验：字段、id 唯一性、引用完整性、富文本标记
-npm run smoke    # 端到端冒烟测试：76 项断言，真的把 app.js 跑一遍
+npm run test-math   # 数学记号排版测试（极限号样式 + 实体解码回归）
+npm run smoke       # 端到端冒烟测试：78 项断言，真的把 app.js 跑一遍
+npm run test-picker # 章节 / 小节选择器测试（含按小节出题的端到端校验）
 npm run verify-readme     # 核对本文档里的事实性陈述与代码是否一致
 npm run verify-community  # 核对社区文件（issue 表单结构、行为准则、安全策略）
-npm run check    # 上面四件事依次跑一遍（提交前建议跑这个）
+npm run check    # 上面六件事依次跑一遍（提交前建议跑这个）
 node scripts/validate-content.mjs --strict   # 把"提示"也当成失败
 node scripts/fetch-open-bank.mjs --schema    # 查看题库 JSON 格式说明
 ```
@@ -617,12 +624,15 @@ $ npm run validate
 
 出错时（例如定理漏了证明、id 重复、标签没配对）会以 error 列出并返回退出码 1。
 
-`npm run check` 会依次跑三件事，全部通过才返回 0：
+`npm run check` 会依次跑六件事，全部通过才返回 0：
 
 ```
-npm run validate       内容校验（字段、id、引用、标记）
-npm run smoke          端到端冒烟测试 44 项（真的把 js/app.js 跑一遍）
-npm run verify-readme  核对本文档里的事实性陈述与代码是否一致
+npm run validate        内容校验（字段、id 唯一性、引用完整性、富文本标记）
+npm run test-math       数学记号排版（极限号样式 + HTML 实体解码回归）
+npm run smoke           端到端冒烟测试 78 项（真的把 js/app.js 跑一遍）
+npm run test-picker     章节 / 小节选择器（含"按小节出题"的端到端校验）
+npm run verify-readme   核对本文档里的事实性陈述与代码是否一致
+npm run verify-community 社区文件（issue 表单结构、行为准则、安全策略）
 ```
 
 `verify-readme` 会复算本文档中所有可验证的数字与路径——教材条目计数、每章题目数与难度分布、
@@ -663,7 +673,7 @@ docs/
 scripts/
   serve.mjs                零依赖静态服务器
   validate-content.mjs     内容校验器
-  smoke-test.mjs           端到端冒烟测试（76 项断言）
+  smoke-test.mjs           端到端冒烟测试（78 项断言）
   smoke-dom.mjs            冒烟测试用的轻量 DOM 垫片
   verify-readme.mjs        核对 README 的事实性陈述（防止文档随代码漂移）
   fetch-open-bank.mjs      开放许可题库导入管道

@@ -58,6 +58,10 @@ function render() {
 
   host.classList.toggle('is-wide', currentView === 'textbook' || currentView === 'notebook');
 
+  // 章节选择器里"部分选中"的章：indeterminate 只能通过 JS 属性设置，
+  // 不是 HTML 属性，所以必须在这里统一应用一次。
+  $$('.chapter-picker input[data-partial="true"]').forEach((box) => { box.indeterminate = true; });
+
   // 导航高亮
   $$('.navbtn').forEach((b) => {
     const on = b.dataset.view === currentView;
