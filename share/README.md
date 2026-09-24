@@ -13,8 +13,17 @@
 | `share-qrcode-v0.1.5.png` | **带版本标注**，564×770。二维码下方写了「MATH TRAINER / v0.1.5 / 一句话介绍」 |
 | `share-qrcode-v0.1.5.svg` | 带版本标注的矢量版，**含中文**（数学陪练 · 开源数学自学网站 / v0.1.5）。打印最清晰 |
 
-四张都指向同一个网址。`share-qrcode.png` 与 `share-qrcode-v0.1.5.png` 已用解码器
-**反解验证**：扫出来的字符串与上面的网址逐字符一致。
+四张都指向同一个网址，并且**四张都用解码器反解验证过**：扫出来的字符串与上面的网址逐字符一致。
+
+验证分两层：
+
+| 命令 | 要不要装依赖 | 验什么 | 在 CI 里跑吗 |
+| --- | --- | --- | --- |
+| `npm run test-qrcode` | 不用（零依赖） | 文件齐备、PNG 结构合规（直接按规范解析字节流：IHDR/IDAT/CRC）、SVG 里有二维码路径、版本标注与 `package.json` 一致 | ✅ 跑 |
+| `npm run verify-qrcode` | 要 `jsqr` + `pngjs` | **真的拿解码器扫一遍**：四份素材都能扫出正确网址；外加反向对照，确认解码器不是假阳性 | ❌ 不跑 |
+
+> `verify-qrcode` 需要第三方解码器，缺依赖时会**直接报错退出**（不会静默跳过假装通过），
+> 所以它刻意不进 CI —— 项目本身保持零依赖。发布分享素材前请在本机手动跑一次。
 
 ## 怎么分享
 
@@ -56,11 +65,23 @@ https://vanilla-icewagtail.github.io/math-improvement-plan/
 改了域名或想更新版本标注时：
 
 ```bash
-node scripts/make-qrcode.mjs             # 生成全部素材（版本号取自 package.json）
-node scripts/make-qrcode.mjs --verify    # 反解已有 PNG，确认能扫出正确网址
-node scripts/make-qrcode.mjs --dump-font # 打印点阵字模，人工核对标注文字
-npm run test-qrcode                      # 完整的二维码素材测试
+node scripts/make-qrcode.mjs                 # 生成全部素材（版本号取自 package.json）
+npm run verify-qrcode                        # ⭐ 用解码器反解四份素材，确认真能扫出正确网址
+npm run test-qrcode                          # 零依赖的结构性测试（CI 里跑的就是这个）
+node scripts/make-qrcode.mjs --verify        # 等同于 npm run verify-qrcode
+node scripts/make-qrcode.mjs --dump-font     # 打印点阵字模，人工核对标注文字
 ```
+
+依赖（只有 `verify-qrcode` 需要，**装在项目外，不会污染仓库**）：
+
+```bash
+# Windows
+mkdir "%TEMP%\dsh-qr2" && cd /d "%TEMP%\dsh-qr2" && npm install qrcode jsqr pngjs
+# Linux / macOS
+mkdir -p "$TMPDIR/dsh-qr2" && cd "$TMPDIR/dsh-qr2" && npm install qrcode jsqr pngjs
+```
+
+装在别处也行，用 `QR_MODULES=<那个 node_modules 的绝对路径>` 指过去即可。
 
 实现的几个要点（都在 `scripts/` 里，无第三方运行时依赖）：
 

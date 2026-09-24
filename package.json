@@ -27,6 +27,7 @@
     "test-importer": "node scripts/test-importer.mjs",
     "test-import-ui": "node scripts/test-import-ui.mjs",
     "test-qrcode": "node scripts/test-qrcode.mjs",
+    "verify-qrcode": "node scripts/verify-qrcode-decode.mjs",
     "qrcode": "node scripts/make-qrcode.mjs",
     "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/smoke-test.mjs && node scripts/test-picker.mjs && node scripts/test-importer.mjs && node scripts/test-import-ui.mjs && node scripts/test-qrcode.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
   },

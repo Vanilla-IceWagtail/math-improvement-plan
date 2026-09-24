@@ -5,6 +5,57 @@
 > 版本说明：`0.x` 表示**接口与内容仍可能变动**。当前内容仍在持续填充
 > （部分知识点配套题不足 3 道），因此首个公开版本定为 `0.1.0` 而不是 `1.0.0`。
 
+## [未发布]
+
+修复二维码测试在非 Windows 平台上崩溃的问题（CI 因此变红）。
+
+### 修复
+
+- **`npm run test-qrcode` 在 Linux / macOS 上直接崩溃**，导致 CI 全红。
+
+  ```
+  TypeError [ERR_INVALID_ARG_TYPE]: The "path" argument must be of type string. Received undefined
+      at Object.join (node:path:1354:7)
+      at .../scripts/test-qrcode.mjs:23:18
+  ```
+
+  原因有两层：
+
+  1. **用了 Windows 专有环境变量**。第 23 行是
+     `path.join(process.env.TEMP, 'dsh-qr2', 'node_modules')` —— `TEMP` 是 Windows 的叫法，
+     Linux/macOS 用 `TMPDIR`。在 Ubuntu runner 上 `process.env.TEMP === undefined`，
+     `path.join(undefined, ...)` 直接抛错。而且这行在**模块顶层**，
+     所以不是"某条断言失败"，而是**整个测试文件一条断言都没跑就死了**。
+  2. **测试依赖了开发机上的残留状态**。它假设系统临时目录里已经装好了
+     `jsqr` / `pngjs` —— 那是本地生成二维码时临时装的。全新 runner 上没有这些包，
+     而旧代码的兜底是 `skip(...)` 且让 `failed` 保持 0，也就是**跳过 + 仍然返回成功**。
+     于是这段代码只有两种命运：**崩掉，或者假装通过**。
+
+  本地一直没发现，是因为「平台差异」与「本机残留状态」两个条件同时成立，
+  在 Windows 上永远复现不出来。
+
+  改法：
+
+  - `scripts/test-qrcode.mjs` 改为**彻底零依赖**：不再碰临时目录、不再碰第三方包，
+    改成直接按 PNG 规范解析自己写出的字节流 —— 签名、分块顺序、
+    **独立重算的 CRC32**、IHDR 尺寸/位深/颜色类型、IDAT 解压后长度是否为 `(宽+1) × 高`、
+    每行滤波字节、以及"解析正好吃到文件尾"。任何平台都能跑，而且是真检查。
+    断言数 10 → **28**。
+  - 真正"用解码器扫一遍"的验证拆到 `scripts/verify-qrcode-decode.mjs`
+    （`npm run verify-qrcode`）：四份素材全部反解并要求与网址逐字符一致，
+    **SVG 也验**（把矢量路径还原成位图后再解码），外加两条**反向对照**
+    （全白图与只有定位图案的假码必须解不出来，防止解码器假阳性）。
+    它需要 `jsqr` / `pngjs`，缺依赖就**报错退出（退出码 2）**而不是静默跳过；
+    因为要第三方包，它**不进 `npm run check`、不进 CI**。
+  - `scripts/make-qrcode.mjs` 里同样的 `process.env.TEMP`（第 27、38 行）一并修掉，
+    统一改用 `os.tmpdir()`，并支持 `QR_TMP` / `QR_MODULES` 覆盖；
+    它的 `--verify` 现在转发给 `verify-qrcode-decode.mjs`，避免两份实现各自漂移。
+
+### 说明
+
+- 已模拟 `TEMP` 不存在的环境（`Remove-Item Env:TEMP`）复现并验证修复：
+  `test-qrcode` 与 `make-qrcode --verify` 均返回退出码 0。
+
 ## [0.1.5] — 2026-09-24
 
 导入面板里加"去哪儿找题"，并给分享二维码加上版本标注。
@@ -44,9 +95,10 @@
 ### 测试
 
 - 新增 `scripts/test-qrcode.mjs`：文件齐备、PNG 文件头、SVG 内容与版本标注、
-  **用真实解码器反解 PNG 并要求与目标网址逐字符一致**、自研编码器往返正确性、
-  以及 `share/README.md` 与版本的一致性。
-  缺少解码依赖时会**明确跳过并说明**，不会伪装成通过。
+  **直接按 PNG 规范解析自研编码器写出的字节流**（分块顺序、独立重算的 CRC32、
+  IDAT 解压长度、像素抽样）、以及 `share/README.md` 与版本的一致性。共 28 项断言。
+  该文件**不依赖任何第三方包**，任何平台都能跑。
+- 真正"用解码器反解"的深度校验见 `scripts/verify-qrcode-decode.mjs`（`npm run verify-qrcode`）。
 - `npm run check` 现共 **九个步骤**；CI 同步增加该步骤。
 
 ## [0.1.4] — 2026-09-24

@@ -7,11 +7,12 @@
 // 用法：
 //   node scripts/make-qrcode.mjs                生成全部素材
 //   node scripts/make-qrcode.mjs --dump-font    只打印字模供人工核对
-//   node scripts/make-qrcode.mjs --verify       只反解已有 PNG，验证能扫出正确网址
+//   node scripts/make-qrcode.mjs --verify       反解已有素材（转发给 verify-qrcode-decode.mjs）
 
 import { pathToFileURL } from 'node:url';
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
 import { createBitmap, fillRect, encodePng } from './lib/png.mjs';
 import { drawText, textWidth } from './lib/bitmap-font.mjs';
 
@@ -24,7 +25,11 @@ const VERSION = process.env.QR_VERSION || `v${pkg.version}`;
 const TAGLINE = 'GROUPED PRACTICE / MISTAKE BOOK / TEXTBOOK PROOFS';
 const DATE = process.env.QR_DATE || new Date().toISOString().slice(0, 10);
 
-const TMP_MODULES = path.join(process.env.TEMP, 'dsh-qr2', 'node_modules');
+// 临时依赖目录要跨平台：Windows 用 %TEMP%，Linux/macOS 用 $TMPDIR。
+// 用 os.tmpdir() 统一（之前写死 process.env.TEMP，在 Linux 上是 undefined，
+// path.join 会直接抛 ERR_INVALID_ARG_TYPE —— CI 就是这么挂的）。
+const TMP_ROOT = process.env.QR_TMP || path.join(os.tmpdir(), 'dsh-qr2');
+const TMP_MODULES = path.join(TMP_ROOT, 'node_modules');
 const OUT = path.resolve('share');
 
 const args = process.argv.slice(2);
@@ -35,7 +40,7 @@ async function loadQR() {
     return (await import(pathToFileURL(p).href)).default;
   } catch {
     console.error('  找不到 qrcode 库。请先在临时目录安装：');
-    console.error(`    cd "${path.join(process.env.TEMP, 'dsh-qr2')}" && npm install qrcode jsqr pngjs`);
+    console.error(`    cd "${TMP_ROOT}" && npm install qrcode jsqr pngjs`);
     process.exit(1);
   }
 }
@@ -48,24 +53,10 @@ if (args.includes('--dump-font')) {
 }
 
 /* ---------------- 只反解已有 PNG ---------------- */
+// 真正"用解码器扫一遍"的逻辑统一放在 verify-qrcode-decode.mjs，
+// 这里只做转发，避免两份实现各自漂移。
 if (args.includes('--verify')) {
-  const jsQR = (await import(pathToFileURL(path.join(TMP_MODULES, 'jsqr/dist/jsQR.js')).href)).default;
-  const { PNG } = await import(pathToFileURL(path.join(TMP_MODULES, 'pngjs/lib/png.js')).href);
-  let bad = 0;
-  for (const f of ['share-qrcode.png', `share-qrcode-${VERSION}.png`]) {
-    try {
-      const png = PNG.sync.read(await readFile(path.join(OUT, f)));
-      const res = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
-      const ok = res && res.data === URL_TO_SHARE;
-      if (!ok) bad += 1;
-      console.log(`  ${ok ? 'OK  ' : 'FAIL'} ${f}  ${png.width}x${png.height}  ->  ${res ? res.data : '(无法解码)'}`);
-    } catch (err) {
-      bad += 1;
-      console.log(`  FAIL ${f}  ${err.message}`);
-    }
-  }
-  console.log(bad === 0 ? '\n  两张 PNG 都能扫出正确网址 ✅' : `\n  有 ${bad} 张不合格`);
-  process.exit(bad ? 1 : 0);
+  await import('./verify-qrcode-decode.mjs'); // 该模块自己会 process.exit
 }
 
 /* ---------------- 生成全部素材 ---------------- */
