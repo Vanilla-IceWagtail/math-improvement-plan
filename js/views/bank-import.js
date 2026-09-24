@@ -32,6 +32,42 @@ let picked = new Set();
 /** 预览里的分组方式 */
 let previewFilter = 'all';   // all | ok | problem | duplicate
 
+/**
+ * 推荐的免费数学资源。
+ *
+ * ⚖️ 为什么每条都要标"许可"与"能不能导出"：
+ *   「免费能看」和「允许你复制下来再分发」是两件不同的事。
+ *   下面这些站点全部可以**正常访问、正常做题**，但只有第 1 组是明确开放许可、
+ *   允许你再分发（需按许可署名）的；第 2 组只是在线使用，**不要批量抓取**——
+ *   那属于复制发行，不是"浏览一下"，通常违反对方条款。
+ *
+ * 收录标准：官方/高校/公益机构主办、免费、可公开访问。
+ * 商业题库（付费或变相付费）一律不收录。
+ */
+const RECOMMENDED_SITES = [
+  {
+    group: '可导出复用（开放许可）',
+    hint: '这些站点的内容是开放许可的，导出来放进本站是允许的 —— 记得保留署名与许可说明。',
+    items: [
+      { name: 'MIT OpenCourseWare', org: '麻省理工学院', url: 'https://ocw.mit.edu/', note: '大学课程讲义与习题', license: 'CC BY-NC-SA' },
+      { name: "Paul's Online Math Notes", org: 'Lamar 大学', url: 'https://tutorial.math.lamar.edu/', note: '微积分习题与详解，按主题分类', license: '免费使用' },
+      { name: 'OpenStax', org: '莱斯大学', url: 'https://openstax.org/', note: '教材正文 CC BY 4.0（注意：其题库保留权利，勿抓）', license: 'CC BY 4.0' },
+      { name: 'Wikibooks（微积分）', org: '维基媒体基金会', url: 'https://en.wikibooks.org/wiki/Calculus', note: '社区编写的微积分教材与练习', license: 'CC BY-SA' },
+    ],
+  },
+  {
+    group: '仅在线做题（请勿批量抓取）',
+    hint: '这些站点内容受版权保护，只适合在线练习与观看。请遵守对方使用条款，不要下载题库。',
+    items: [
+      { name: '国家中小学智慧教育平台', org: '教育部', url: 'https://basic.smartedu.cn/', note: '官方免费，含配套练习与课程' },
+      { name: '中国大学 MOOC', org: '网易 & 高教社', url: 'https://www.icourse163.org/', note: '高校课程，含测验与作业' },
+      { name: '学堂在线', org: '清华大学', url: 'https://www.xuetangx.com/', note: '高校课程，部分带习题' },
+      { name: 'Khan Academy', org: '可汗学院', url: 'https://www.khanacademy.org/', note: '练习系统带即时反馈' },
+      { name: 'MIT OCW 中文', org: 'MIT OCW 翻译版', url: 'https://ocw.mit.edu/search/?q=calculus', note: '直接搜 calculus 找课程作业' },
+    ],
+  },
+];
+
 export const importState = () => ({ pending, picked: [...picked], previewFilter });
 
 /* ------------------------------------------------------------------ 面板 */
@@ -76,6 +112,9 @@ function renderPanel() {
 
     <div data-preview></div>
 
+    <div class="section-head" style="margin-top:var(--sp-5)"><h2>去哪儿找题：推荐的免费数学资源</h2><span class="line"></span></div>
+    ${renderRecommendedSites()}
+
     <div class="section-head" style="margin-top:var(--sp-5)"><h2>导出 / 分享</h2><span class="line"></span></div>
     <p style="font-size:13.6px;color:var(--c-text-soft)">
       把你想要的范围导成一个「题包」文件，发给同学，他拖进来就能用。
@@ -113,6 +152,40 @@ function renderPanel() {
       正确做法是在题库网站里<b>导出</b>（或复制）题目，再拖进这里。
       如果某个题库站提供了 <b>OAuth 授权 / 开放 API</b>（用户不交密码，而是跳转到对方页面授权），
       我们可以正式对接 —— 见 <code>js/views/bank-import.js</code> 里 <code>connectViaOAuth()</code> 的说明。
+    </p>`;
+}
+
+/* ------------------------------------------------------------------ 推荐资源 */
+
+function renderRecommendedSites() {
+  return RECOMMENDED_SITES.map((g) => `
+    <div class="site-group">
+      <div class="site-group-head">
+        <span class="tag ${g.group.startsWith('可导出') ? 'tag-ok' : 'tag-warn'}">${esc(g.group)}</span>
+        <span class="site-group-hint">${esc(g.hint)}</span>
+      </div>
+      <div class="site-list">
+        ${g.items.map((s) => `
+          <a class="site-item" href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">
+            <div class="site-item-main">
+              <div class="site-item-name">
+                ${esc(s.name)}
+                <span class="site-item-org">${esc(s.org)}</span>
+              </div>
+              <div class="site-item-note">${esc(s.note)}</div>
+            </div>
+            <div class="site-item-side">
+              ${s.license ? `<span class="tag tag-soft">${esc(s.license)}</span>` : ''}
+              ${icon('arrowRight', { size: 14 })}
+            </div>
+          </a>`).join('')}
+      </div>
+    </div>`).join('') + `
+    <p style="font-size:12.6px;color:var(--c-text-faint);margin-top:var(--sp-3)">
+      ⚖️ 上面的站点都可以免费访问。但请留意分组：<b>只有第一组是开放许可、可以导出后放进本站的</b>；
+      第二组受版权保护，仅适合在线做题 —— <b>不要批量下载或抓取</b>，那属于复制发行，通常违反对方使用条款。
+      <br>
+      本项目只提供链接，不代理、不缓存、不抓取这些站点的内容。
     </p>`;
 }
 

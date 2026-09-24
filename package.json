@@ -1,6 +1,6 @@
 {
   "name": "shuxue-peilian",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "开源数学陪练：分层题组 + 错题本（艾宾浩斯间隔复习）+ 大学教材定义定理通俗详解与证明",
   "type": "module",
   "private": false,
@@ -26,7 +26,9 @@
     "test-picker": "node scripts/test-picker.mjs",
     "test-importer": "node scripts/test-importer.mjs",
     "test-import-ui": "node scripts/test-import-ui.mjs",
-    "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/smoke-test.mjs && node scripts/test-picker.mjs && node scripts/test-importer.mjs && node scripts/test-import-ui.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
+    "test-qrcode": "node scripts/test-qrcode.mjs",
+    "qrcode": "node scripts/make-qrcode.mjs",
+    "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/smoke-test.mjs && node scripts/test-picker.mjs && node scripts/test-importer.mjs && node scripts/test-import-ui.mjs && node scripts/test-qrcode.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
   },
   "engines": {
     "node": ">=18"

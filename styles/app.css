@@ -533,6 +533,58 @@ code:has(.math-lim) { padding: 0; }
 }
 .fmt-table th { background: var(--c-surface-2); font-weight: 700; }
 
+/* ---------- 推荐数学资源列表 ---------- */
+.site-group { margin-bottom: var(--sp-4); }
+.site-group-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--sp-2);
+}
+.site-group-hint {
+  flex: 1;
+  min-width: 200px;
+  font-size: 12.8px;
+  color: var(--c-text-soft);
+  line-height: 1.6;
+}
+.site-list {
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.site-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 9px var(--sp-3);
+  border-bottom: 1px solid var(--c-border);
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--dur);
+}
+.site-item:last-child { border-bottom: 0; }
+.site-item:hover { background: var(--c-bg-alt); text-decoration: none; }
+.site-item-main { flex: 1; min-width: 0; }
+.site-item-name {
+  font-size: 14.4px;
+  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.site-item-org { font-size: 12px; color: var(--c-text-faint); font-weight: 500; }
+.site-item-note { font-size: 12.8px; color: var(--c-text-soft); margin-top: 1px; }
+.site-item-side {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--c-text-faint);
+}
+
 .quiz-card { overflow: hidden; }
 .quiz-progress { padding: var(--sp-3) var(--sp-5); border-bottom: 1px solid var(--c-border); background: var(--c-surface-2); }
 .quiz-progress .row { gap: var(--sp-3); }

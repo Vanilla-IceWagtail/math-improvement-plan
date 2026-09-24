@@ -74,6 +74,9 @@ jobs:
       - name: 题库导入界面端到端测试
         run: npm run test-import-ui
 
+      - name: 二维码素材测试（反解验证能扫出正确网址）
+        run: npm run test-qrcode
+
       - name: 端到端冒烟测试（78 项断言，真实执行 app.js）
         run: npm run smoke
 
