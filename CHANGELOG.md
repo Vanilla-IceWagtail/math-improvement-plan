@@ -5,6 +5,84 @@
 > 版本说明：`0.x` 表示**接口与内容仍可能变动**。当前内容仍在持续填充
 > （部分知识点配套题不足 3 道），因此首个公开版本定为 `0.1.0` 而不是 `1.0.0`。
 
+## [未发布]
+
+修复手机端「顶部那排图标完全看不到、点不到」的严重显示 bug。
+
+### 修复
+
+- **手机上顶栏右侧的四个图标（提醒 / 收藏 / 设置 / 主题）被底部导航栏盖住。**
+
+  症状：桌面端一切正常，但在手机上顶部整条栏像是消失了 ——
+  看不到齿轮，也就进不去「数据与设置」（题库导入 / 分享面板就在里面）。
+
+  根因是 CSS 规范里一条很隐蔽的规则：
+
+  > 元素只要带有 `backdrop-filter`（或 `filter` / `perspective` / `transform` /
+  > `will-change` / `contain`），就会成为**它所有后代的包含块** ——
+  > `position: fixed` 的后代也不例外。
+
+  而 `.topbar` 上正好有 `backdrop-filter: saturate(1.4) blur(12px)`，
+  移动端的底部导航 `.mainnav` 又恰好是 `.topbar` 的**子元素**，
+  并在窄屏（`max-width: 860px`）下变成 `position: fixed; bottom: 0`。
+
+  于是这个 `bottom: 0` 指的不是"视口的底部"，而是"**顶栏的底部**"。
+  底栏被画到了屏幕顶端，正好压住右上角那排图标。
+
+  实测数据（Firefox 无头浏览器，390×844 视口）：
+
+  ```
+  修复前  .mainnav  rect=(0,-1,390x62)   pos=fixed
+          #btn-data 中心点 (231,31) 的 elementFromPoint → BUTTON.navbtn   ← 被「教材定理定义」接住
+          命中自己或子元素 = 否
+
+  修复后  .mainnav  rect=(0,782,390x62)  pos=fixed   ← 782+62 = 844 = 视口底部
+          #btn-data 中心点 (317,31) 的 elementFromPoint → 自己按钮内的 svg
+          命中自己或子元素 = 是（可点）
+  ```
+
+  `y = -1` 这个数字能对上账：顶栏高 62px、含 1px 下边框，
+  固定定位后代的包含块是它的**内边距盒**（61px），`bottom: 0` 于是落在 y=61，
+  再减去自身高度 62 → **y = -1**。
+
+  为什么桌面端一直是好的：那时 `.mainnav` 是普通流内元素，
+  而且它靠 `margin-left: auto` 把 `.topbar-actions` 一起推到右边 ——
+  这也解释了为什么手机上那排图标还会一起贴到左边去。
+
+  改法：
+
+  - **毛玻璃效果改由 `.topbar::before` 承担**（`position: absolute; inset: 0; z-index: -1;
+    pointer-events: none`）。伪元素不再制造包含块，视觉效果与原来一致。
+  - 移动端补上 `.topbar-actions { margin-left: auto }` ——
+    `.mainnav` 一走开就没人把它推到右边了。
+  - 顺带修 iPhone 刘海：`.topbar` 的高度与 `padding` 现在都留出
+    `env(safe-area-inset-top)`（页面声明了 `viewport-fit=cover`，之前只处理了底部），
+    移动端覆盖 `padding` 时也不再把它冲掉。
+  - 在 `.topbar` 规则上留了醒目注释，写明"不要把这些属性写在这里"。
+
+### 测试
+
+- 新增 `scripts/test-layout.mjs`：**移动端布局静态回归测试**（零依赖，19 项断言）。
+  它做的是结构性断言：`.mainnav` 的祖先链（`html` / `body` / `.topbar`）
+  不得出现制造包含块的属性；同时守住"毛玻璃效果不许被顺手删掉"、
+  "移动端关键规则仍在位"、"设置入口确实接着处理器"。
+  已接入 `npm run check`（现共十步）与 CI。
+
+  **已做反向对照**：把 `backdrop-filter` 加回 `.topbar`，测试立即失败并指出原因
+  （`发现：.topbar 里的 backdrop-filter —— 这会让移动端底栏以顶栏为基准定位`），退出码 1。
+
+- 新增 `scripts/verify-layout-browser.mjs`（`npm run verify-layout`）：
+  真正开浏览器量像素的深度校验，覆盖 320 / 375 / 390 / 414 / 430 / 768 / 860 /
+  861 / 1024 / 1440 十个宽度，逐个断言"四个图标都在视口内且 `elementFromPoint`
+  命中自己""窄屏时底栏贴住视口底部""窄屏时底栏不与顶栏重叠"。**30 项断言全通过。**
+  它需要本机有 Firefox 或 Chromium，找不到就报错退出（退出码 2）而非静默跳过，
+  因此**刻意不进 CI**。
+
+### 文档
+
+- README 的 CI 步骤表补齐了此前漏列的导入、界面、二维码三步，
+  并写明 `npm run check` 与 CI 的对应关系，以及两项可选深度校验各自需要什么。
+
 ## [0.1.6] — 2026-09-24
 
 修复二维码测试在非 Windows 平台上崩溃的问题（CI 因此变红）。

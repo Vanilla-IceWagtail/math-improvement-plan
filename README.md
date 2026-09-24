@@ -207,13 +207,27 @@ node scripts/serve.mjs 8080
 | 校验零依赖原则 | 检查 `package.json` 里没有 `dependencies` / `devDependencies` |
 | 内容校验 | 204 条教材条目 + 194 道题的结构、id 唯一性、引用完整性、富文本标记 |
 | 数学记号排版测试 | 极限号的教科书样式渲染（单元用例 + 全量回归） |
+| 移动端布局静态回归测试 | 防止 `.topbar` 上的 `backdrop-filter` 让底栏以顶栏为基准定位、盖住右上角图标 |
 | 章节 / 小节选择器测试 | 树形选择器交互 + "按小节出题"的端到端校验 |
+| 题库导入格式识别测试 | 各种顶层形状、别家字段名、题型别名、三分类校验、题包往返 |
+| 题库导入界面端到端测试 | 真实走"拖入文件 → 预览 → 反选 → 确认导入" |
+| 二维码素材测试 | 直接按 PNG 规范解析字节流；分享素材与版本号一致 |
 | 端到端冒烟测试 | 78 项断言，真实执行 `js/app.js` |
 | README 事实核对 | 文档里的数字、示例、路径必须与代码一致 |
 | 社区文件校验 | issue 表单结构、行为准则、安全策略、交叉链接 |
 
 在 **Node 20 与 Node 22** 上各跑一遍（矩阵构建），任一失败即 CI 失败。
-`npm run check` 在本地等价于后六步。
+`npm run check` 在本地等价于**除第一步（零依赖原则）之外的全部十步**。
+
+有两项校验**刻意不进 CI**，因为它们需要第三方依赖或本机浏览器，而本项目坚持零依赖：
+
+| 可选校验 | 需要什么 | 验什么 |
+| --- | --- | --- |
+| `npm run verify-qrcode` | `jsqr` + `pngjs` | 真的用解码器反解四份二维码素材，并要求扫出的网址逐字符一致 |
+| `npm run verify-layout` | 本机 Firefox 或 Chromium | 真的开浏览器量像素：顶栏四个图标在各宽度下都能点到、底栏贴住视口底部 |
+
+两者都是**找不到依赖就报错退出**（不会"跳过并假装通过"）—— 这一点是刻意的，
+因为一个永远静默跳过的测试比没有测试更危险。
 
 ### 数学记号怎么写的（给贡献者）
 
@@ -247,13 +261,20 @@ node scripts/serve.mjs 8080
 npm start        # 启动本地服务器（默认 5173）
 npm run validate # 内容校验：字段、id 唯一性、引用完整性、富文本标记
 npm run test-math   # 数学记号排版测试（极限号样式 + 实体解码回归）
+npm run test-layout # 移动端布局静态回归测试（顶栏图标不能被底栏盖住）
 npm run smoke       # 端到端冒烟测试：78 项断言，真的把 app.js 跑一遍
 npm run test-picker # 章节 / 小节选择器测试（含按小节出题的端到端校验）
 npm run test-importer   # 题库导入格式识别测试（别家字段名、中文题型、错题本导出）
 npm run test-import-ui  # 题库导入界面端到端测试（拖入→预览→勾选→导入）
+npm run test-qrcode       # 二维码素材测试（零依赖，直接解析 PNG 字节流）
 npm run verify-readme     # 核对本文档里的事实性陈述与代码是否一致
 npm run verify-community  # 核对社区文件（issue 表单结构、行为准则、安全策略）
-npm run check    # 上面八件事依次跑一遍（提交前建议跑这个）
+npm run check    # 上面十件事依次跑一遍（提交前建议跑这个）
+
+# 以下两项需要额外依赖 / 本机浏览器，不进 CI，按需手动跑：
+npm run verify-qrcode  # 用解码器反解四份二维码素材（需 jsqr + pngjs）
+npm run verify-layout  # 开浏览器量像素校验移动端布局（需 Firefox 或 Chromium）
+
 node scripts/validate-content.mjs --strict   # 把"提示"也当成失败
 node scripts/fetch-open-bank.mjs --schema    # 查看题库 JSON 格式说明
 ```
@@ -626,15 +647,19 @@ $ npm run validate
 
 出错时（例如定理漏了证明、id 重复、标签没配对）会以 error 列出并返回退出码 1。
 
-`npm run check` 会依次跑六件事，全部通过才返回 0：
+`npm run check` 会依次跑十件事，全部通过才返回 0：
 
 ```
-npm run validate        内容校验（字段、id 唯一性、引用完整性、富文本标记）
-npm run test-math       数学记号排版（极限号样式 + HTML 实体解码回归）
-npm run smoke           端到端冒烟测试 78 项（真的把 js/app.js 跑一遍）
-npm run test-picker     章节 / 小节选择器（含"按小节出题"的端到端校验）
-npm run verify-readme   核对本文档里的事实性陈述与代码是否一致
-npm run verify-community 社区文件（issue 表单结构、行为准则、安全策略）
+npm run validate          内容校验（字段、id 唯一性、引用完整性、富文本标记）
+npm run test-math         数学记号排版（极限号样式 + HTML 实体解码回归）
+npm run test-layout       移动端布局静态回归（顶栏图标不能被底栏盖住）
+npm run smoke             端到端冒烟测试 78 项（真的把 js/app.js 跑一遍）
+npm run test-picker       章节 / 小节选择器（含"按小节出题"的端到端校验）
+npm run test-importer     题库导入格式识别（别家字段名、中文题型、题包往返）
+npm run test-import-ui    题库导入界面端到端（拖入 → 预览 → 勾选 → 导入）
+npm run test-qrcode       二维码素材（零依赖，直接解析 PNG 字节流）
+npm run verify-readme     核对本文档里的事实性陈述与代码是否一致
+npm run verify-community  社区文件（issue 表单结构、行为准则、安全策略）
 ```
 
 `verify-readme` 会复算本文档中所有可验证的数字与路径——教材条目计数、每章题目数与难度分布、

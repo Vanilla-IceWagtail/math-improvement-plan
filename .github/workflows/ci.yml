@@ -65,6 +65,9 @@ jobs:
       - name: 数学记号排版测试（极限号的教科书样式）
         run: npm run test-math
 
+      - name: 移动端布局静态回归测试（顶栏图标不能被底栏盖住）
+        run: npm run test-layout
+
       - name: 章节 / 小节选择器测试
         run: npm run test-picker
 
@@ -94,5 +97,6 @@ jobs:
           echo "| 检查项 | 说明 |" >> "$GITHUB_STEP_SUMMARY"
           echo "| --- | --- |" >> "$GITHUB_STEP_SUMMARY"
           echo "| 内容校验 | 204 条教材条目 + 194 道题的结构与引用完整性 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| 布局回归 | 移动端底栏不许盖住顶栏那排图标（backdrop-filter 包含块陷阱） |" >> "$GITHUB_STEP_SUMMARY"
           echo "| 冒烟测试 | 内容加载、组题阶梯、三个版块渲染、错题本调度 |" >> "$GITHUB_STEP_SUMMARY"
           echo "| 文档核对 | README 里的数字、示例、路径与代码一致 |" >> "$GITHUB_STEP_SUMMARY"

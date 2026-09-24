@@ -28,8 +28,10 @@
     "test-import-ui": "node scripts/test-import-ui.mjs",
     "test-qrcode": "node scripts/test-qrcode.mjs",
     "verify-qrcode": "node scripts/verify-qrcode-decode.mjs",
+    "test-layout": "node scripts/test-layout.mjs",
+    "verify-layout": "node scripts/verify-layout-browser.mjs",
     "qrcode": "node scripts/make-qrcode.mjs",
-    "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/smoke-test.mjs && node scripts/test-picker.mjs && node scripts/test-importer.mjs && node scripts/test-import-ui.mjs && node scripts/test-qrcode.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
+    "check": "node scripts/validate-content.mjs && node scripts/test-math.mjs && node scripts/test-layout.mjs && node scripts/smoke-test.mjs && node scripts/test-picker.mjs && node scripts/test-importer.mjs && node scripts/test-import-ui.mjs && node scripts/test-qrcode.mjs && node scripts/verify-readme.mjs && node scripts/verify-community.mjs"
   },
   "engines": {
     "node": ">=18"

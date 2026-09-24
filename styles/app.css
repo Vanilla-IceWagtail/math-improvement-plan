@@ -2,15 +2,29 @@
    app.css —— 布局与组件
    ========================================================================== */
 
-/* ---------- 顶栏 ---------- */
+/* ---------- 顶栏 ----------
+   ⚠️ 千万不要把 backdrop-filter / filter / transform / perspective / will-change
+   直接写在 .topbar 上：按 CSS 规范，这类属性会让元素成为**所有后代的包含块**，
+   position: fixed 的后代也不例外。
+
+   移动端的底部导航 .mainnav 就是 .topbar 的子元素，而它在窄屏下会变成
+   position: fixed; bottom: 0。一旦 .topbar 成了它的包含块，这个 bottom: 0
+   指的就是"顶栏的底部"而不是"视口的底部" —— 底栏会被画到屏幕顶端，
+   正好盖住右上角那排图标（铃铛 / 收藏 / 设置 / 主题），设置就点不到了。
+
+   所以毛玻璃效果交给 ::before 去承担：它只影响自己，不制造包含块。
+   改这里之前请先看 scripts/test-layout.mjs 里的回归断言。 */
 .topbar {
   position: sticky; top: 0; z-index: 60;
-  height: var(--topbar-h);
+  height: calc(var(--topbar-h) + env(safe-area-inset-top, 0px));
   display: flex; align-items: center; gap: var(--sp-4);
-  padding: 0 var(--sp-4);
+  padding: env(safe-area-inset-top, 0px) var(--sp-4) 0;
+  border-bottom: 1px solid var(--c-border);
+}
+.topbar::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
   background: color-mix(in srgb, var(--c-surface) 88%, transparent);
   backdrop-filter: saturate(1.4) blur(12px);
-  border-bottom: 1px solid var(--c-border);
 }
 .brand { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
 .brand-mark {
@@ -816,7 +830,11 @@ mark { background: var(--c-accent); color: #1a1a1a; border-radius: 3px; padding:
     position: static; max-height: 320px;
   }
   .app-main { padding-bottom: 92px; }
-  .topbar { gap: var(--sp-2); padding: 0 var(--sp-3); }
+  /* padding-top 要保留刘海安全区，不能写成 padding: 0 ... */
+  .topbar { gap: var(--sp-2); padding: env(safe-area-inset-top, 0px) var(--sp-3) 0; }
+  /* .mainnav 此时已脱离文档流，顶栏里没人再把它推到右边了，
+     所以由 .topbar-actions 自己靠右（桌面端仍由 .mainnav 的 margin-left:auto 负责）。 */
+  .topbar-actions { margin-left: auto; }
   .mainnav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 70;
     margin: 0; border-radius: 0; padding: 6px var(--sp-2) calc(6px + env(safe-area-inset-bottom));
