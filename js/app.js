@@ -193,7 +193,37 @@ function openSettings() {
     title: '数据与设置',
     wide: true,
     body: `
-      <div class="section-head" style="margin-top:0"><h2>学习数据</h2><span class="line"></span></div>
+      <div class="section-head" style="margin-top:0"><h2>题库导入 / 分享 / 找题资源</h2><span class="line"></span></div>
+      <p style="font-size:13.6px;color:var(--c-text-soft)">
+        内置题库有 <b>${bank.total}</b> 道原创题，离线可用。想加题的话有三种方式，
+        都在同一个面板里：<b>拖入 JSON 文件</b>、<b>粘贴 JSON 文本</b>、<b>填网址拉取</b>。
+        导入前会逐题校验并让你勾选要哪些题 —— 不用先把文件改成我们的格式，常见字段名会自动识别。
+      </p>
+      <div class="row row-wrap" style="gap:8px;margin-top:8px">
+        <button type="button" class="btn btn-primary" data-act="open-import">${icon('upload', { size: 14 })} 打开导入 / 导出面板</button>
+        <button type="button" class="btn" data-act="open-resources">${icon('link', { size: 14 })} 去哪儿找题（推荐资源）</button>
+        <button type="button" class="btn" data-act="export-all">${icon('download', { size: 14 })} 导出全部题库</button>
+        ${bank.imported ? `<button type="button" class="btn btn-danger-ghost" data-act="clear-banks">清空外部题（${bank.imported}）</button>` : ''}
+      </div>
+
+      <p class="field-label" style="margin-top:var(--sp-4)">也可以直接填一个 JSON 网址（同源或允许跨域）</p>
+      <div class="row row-wrap" style="gap:8px;margin-top:4px">
+        <input class="input" style="flex:1;min-width:220px" placeholder="https://example.com/math-bank.json" data-set="libraryUrl" value="${esc(st.libraryUrl || '')}">
+        <button type="button" class="btn" data-act="fetch-bank">${icon('refresh', { size: 14 })} 拉取并合并</button>
+      </div>
+      <p style="font-size:12.6px;color:var(--c-text-faint);margin-top:6px">
+        ⚖️ 只接开放许可（CC BY / CC0）或你自己拥有的题库。本项目不抓取任何付费题库。
+        导入的题目至少要有 <code>id / stem / answer</code> 三项。
+        <br>
+        🔒 本项目<b>不会</b>要求你输入其他题库网站的账号密码 —— 那既不安全，也通常违反对方条款。
+        正确做法是在对方网站里<b>导出</b>题目，再拖进这里。
+      </p>
+      ${getState().importedBanks.length ? `
+      <div style="margin-top:10px">
+        ${getState().importedBanks.map((b) => `<div class="stat-row"><span>${esc(b.name)}<br><small style="color:var(--c-text-faint)">${esc(b.license)}｜${b.count} 题（新增 ${b.added}）</small></span><span class="v">${formatDateTime(b.fetchedAt)}</span></div>`).join('')}
+      </div>` : ''}
+
+      <div class="section-head"><h2>学习数据</h2><span class="line"></span></div>
       <div class="grid grid-3">
         <div class="card card-pad"><div style="font-size:22px;font-weight:800">${stats.answered || 0}</div><div style="font-size:12.5px;color:var(--c-text-soft)">累计做题</div></div>
         <div class="card card-pad"><div style="font-size:22px;font-weight:800">${stats.answered ? Math.round(((stats.correct || 0) / stats.answered) * 100) : 0}%</div><div style="font-size:12.5px;color:var(--c-text-soft)">总体正确率</div></div>
@@ -227,35 +257,6 @@ function openSettings() {
           <span style="font-size:13px;color:var(--c-text-soft)">条复习</span>
         </div>
       </div>
-
-      <div class="section-head"><h2>题库导入 / 分享</h2><span class="line"></span></div>
-      <p style="font-size:13.6px;color:var(--c-text-soft)">
-        内置题库有 <b>${bank.total}</b> 道原创题，离线可用。想加题的话有三种方式，
-        都在同一个面板里：<b>拖入 JSON 文件</b>、<b>粘贴 JSON 文本</b>、<b>填网址拉取</b>。
-        导入前会逐题校验并让你勾选要哪些题 —— 不用先把文件改成我们的格式，常见字段名会自动识别。
-      </p>
-      <div class="row row-wrap" style="gap:8px;margin-top:8px">
-        <button type="button" class="btn btn-primary" data-act="open-import">${icon('upload', { size: 14 })} 打开导入 / 导出面板</button>
-        <button type="button" class="btn" data-act="export-all">${icon('download', { size: 14 })} 导出全部题库</button>
-        ${bank.imported ? `<button type="button" class="btn btn-danger-ghost" data-act="clear-banks">清空外部题（${bank.imported}）</button>` : ''}
-      </div>
-
-      <p class="field-label" style="margin-top:var(--sp-4)">也可以直接填一个 JSON 网址（同源或允许跨域）</p>
-      <div class="row row-wrap" style="gap:8px;margin-top:4px">
-        <input class="input" style="flex:1;min-width:220px" placeholder="https://example.com/math-bank.json" data-set="libraryUrl" value="${esc(st.libraryUrl || '')}">
-        <button type="button" class="btn" data-act="fetch-bank">${icon('refresh', { size: 14 })} 拉取并合并</button>
-      </div>
-      <p style="font-size:12.6px;color:var(--c-text-faint);margin-top:6px">
-        ⚖️ 只接开放许可（CC BY / CC0）或你自己拥有的题库。本项目不抓取任何付费题库。
-        导入的题目至少要有 <code>id / stem / answer</code> 三项。
-        <br>
-        🔒 本项目<b>不会</b>要求你输入其他题库网站的账号密码 —— 那既不安全，也通常违反对方条款。
-        正确做法是在对方网站里<b>导出</b>题目，再拖进这里。
-      </p>
-      ${getState().importedBanks.length ? `
-      <div style="margin-top:10px">
-        ${getState().importedBanks.map((b) => `<div class="stat-row"><span>${esc(b.name)}<br><small style="color:var(--c-text-faint)">${esc(b.license)}｜${b.count} 题（新增 ${b.added}）</small></span><span class="v">${formatDateTime(b.fetchedAt)}</span></div>`).join('')}
-      </div>` : ''}
 
       <div class="section-head"><h2>复习间隔</h2><span class="line"></span></div>
       <p style="font-size:13.6px;color:var(--c-text-soft)">
@@ -293,6 +294,13 @@ function openSettings() {
       mask.querySelector('[data-act="open-import"]').addEventListener('click', () => {
         close();
         openBankImport();
+      });
+
+      // 直接跳到面板里的「推荐的免费数学资源」——手机上这一节藏在面板中部，
+      // 不跳的话用户很容易以为"没有网站推荐"
+      mask.querySelector('[data-act="open-resources"]').addEventListener('click', () => {
+        close();
+        openBankImport({ focus: '#rec-sites' });
       });
 
       // 一键导出全部题库（方便分享给别人）

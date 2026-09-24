@@ -165,6 +165,38 @@ check('#btn-data 自身没有 hidden 属性（不会在窄屏被藏起来）',
   Boolean(dataBtnTag) && !/\bhidden\b/.test(dataBtnTag[0]),
   dataBtnTag ? dataBtnTag[0] : '');
 
+/* ---------------- 7. 「推荐的免费数学资源」在手机上要能被找到 ----------------
+   2026-09-24 的第二轮反馈：修好顶栏之后能进设置了，但**找不到网站推荐**。
+   实测（Firefox 无头，390×844）当时的数据：
+     设置面板内容高 2057px、可视 741px
+     「题库导入 / 分享」标题 y=1099、「打开导入 / 导出面板」按钮 y=1263
+     —— 按钮在首屏下方 522px 处，得滚 1.5 屏才看得到。
+   于是做了三件事，这里把它们固化下来。 */
+console.log('\n【推荐资源在手机上要能找到】');
+const bankImport = await read('js/views/bank-import.js');
+
+check('设置面板把「题库导入 / 分享 / 找题资源」放在「学习数据」之前（首屏可见）',
+  appJs.includes('题库导入 / 分享 / 找题资源')
+  && appJs.indexOf('题库导入 / 分享 / 找题资源') < appJs.indexOf('<h2>学习数据</h2>'),
+  '排在「学习数据」之后的话，6 张统计卡会把它顶到两屏之外');
+
+check('设置面板有直达推荐资源的按钮（data-act="open-resources"）',
+  /data-act="open-resources"/.test(appJs));
+check('该按钮的点击处理会带着 focus 打开导入面板',
+  /open-resources[\s\S]{0,300}openBankImport\(\s*\{\s*focus:\s*['"]#rec-sites['"]/.test(appJs),
+  '不跳转的话，推荐区在面板中部，用户仍然容易以为"没有网站推荐"');
+
+check('导入面板给推荐区加了可定位的锚点 id="rec-sites"', /id="rec-sites"/.test(bankImport));
+check('openBankImport 支持 focus 选项并自行设置 scrollTop',
+  /export function openBankImport\(\s*opts\s*=\s*\{\}\s*\)/.test(bankImport)
+  && /modal\.scrollTop\s*=/.test(bankImport),
+  '用 scrollTop 自己算偏移，而不是 scrollIntoView（后者会把整页一起滚）');
+
+check('移动端把 .grid-3 排成两列（统计卡不再堆成一列白占一屏）',
+  Boolean(findInMobile('.grid-3') && /minmax\(\s*\d{3}px/.test(findInMobile('.grid-3').body)
+    && /minmax\(\s*(1[0-9][0-9])px/.test(findInMobile('.grid-3').body)),
+  '默认 minmax(220px, 1fr) 在 ~318px 内容宽下只排得下一列，6 张卡白占约 540px');
+
 /* ---------------- 汇总 ---------------- */
 console.log('');
 console.log(failed === 0 ? '  全部通过 ✅' : `  ${failed} 项失败 ❌`);

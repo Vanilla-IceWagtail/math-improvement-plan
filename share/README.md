@@ -10,10 +10,9 @@
 | --- | --- |
 | `share-qrcode.png` | 纯二维码，1024×1024 白底。发微信 / QQ / 短信时直接当图片发 |
 | `share-qrcode.svg` | 纯二维码，矢量版。适合再加工（自己加标题、贴到海报上） |
-| `share-qrcode-v0.1.7.png` | **带版本标注（当前版本）**，564×770。二维码下方写了「MATH TRAINER / v0.1.7 / 一句话介绍」 |
-| `share-qrcode-v0.1.7.svg` | 带版本标注的矢量版，**含中文**（数学陪练 · 开源数学自学网站 / v0.1.7）。打印最清晰 |
-| `share-qrcode-v0.1.6.png` / `.svg` | 历史版本，**已过时但保留** |
-| `share-qrcode-v0.1.5.png` / `.svg` | 历史版本，**已过时但保留** |
+| `share-qrcode-v0.1.8.png` | **带版本标注（当前版本）**，564×770。二维码下方写了「MATH TRAINER / v0.1.8 / 一句话介绍」 |
+| `share-qrcode-v0.1.8.svg` | 带版本标注的矢量版，**含中文**（数学陪练 · 开源数学自学网站 / v0.1.8）。打印最清晰 |
+| `share-qrcode-v0.1.7` / `v0.1.6` / `v0.1.5` 的 `.png` / `.svg` | 历史版本，**已过时但保留** |
 
 所有素材都指向**同一个网址**，并且**全部用解码器反解验证过**：扫出来的字符串与上面的网址逐字符一致。
 历史版本保留不删，是因为各版本的 release 说明里都链接了对应文件 —— 删掉会让那些链接变成 404；
@@ -37,12 +36,12 @@
 https://vanilla-icewagtail.github.io/math-improvement-plan/
 ```
 
-**当面给同学扫**：手机打开 `share-qrcode.png` 或 `share-qrcode-v0.1.7.png`，让对方扫码。
+**当面给同学扫**：手机打开 `share-qrcode.png` 或 `share-qrcode-v0.1.8.png`，让对方扫码。
 
 **发图片链接**（对方不用下载就能看到）：
 
 ```
-https://raw.githubusercontent.com/Vanilla-IceWagtail/math-improvement-plan/main/share/share-qrcode-v0.1.7.png
+https://raw.githubusercontent.com/Vanilla-IceWagtail/math-improvement-plan/main/share/share-qrcode-v0.1.8.png
 ```
 
 > ⚠️ 微信里发 `raw.githubusercontent.com` 的图片链接**可能被拦**。
@@ -100,9 +99,9 @@ mkdir -p "$TMPDIR/dsh-qr2" && cd "$TMPDIR/dsh-qr2" && npm install qrcode jsqr pn
 
 - 二维码是**静态图片**，不会随网站更新自动变化。网址不变，所以旧图依然可用；
   只有想更新「版本标注」时才需要重新生成。
-- 带版本标注的文件名里含版本号（如 `-v0.1.6`）。升级后重新生成会**新增**一份，
+- 带版本标注的文件名里含版本号（如 `-v0.1.8`）。升级后重新生成会**新增**一份，
   旧的会保留（因为凡是发出去的图都收不回来，删掉反而会让人以为发错了）——
-  只想留最新的话可以手动删掉旧的那份。当前最新是 **v0.1.6**。
+  只想留最新的话可以手动删掉旧的那份。当前最新是 **v0.1.8**。
 - 二维码**只用于分享**：它不会出现在网站页面上，`share/` 目录也不在 GitHub Pages
   的发布范围内（线上访问 `…/share/share-qrcode.png` 会得到 404）。
   要发给别人请用上面的 raw 链接，或直接发图片文件。

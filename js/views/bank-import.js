@@ -72,7 +72,12 @@ export const importState = () => ({ pending, picked: [...picked], previewFilter 
 
 /* ------------------------------------------------------------------ 面板 */
 
-export function openBankImport() {
+/**
+ * 打开导入 / 分享面板
+ * @param {{focus?: string}} [opts] focus 传一个选择器时，面板挂载后会自动滚动到那个元素
+ *   （手机上「推荐的免费数学资源」在面板中部，不跳的话很容易以为没有这一节）
+ */
+export function openBankImport(opts = {}) {
   openModal({
     title: '导入 / 分享题库',
     wide: true,
@@ -80,6 +85,20 @@ export function openBankImport() {
     footer: `<button type="button" class="btn btn-primary" data-close>关闭</button>`,
     onMount(mask, close) {
       bindPanel(mask, close);
+
+      if (opts.focus) {
+        const modal = mask.querySelector('.modal');
+        const target = mask.querySelector(opts.focus);
+        // 用 getBoundingClientRect 自己算偏移量，而不是 scrollIntoView：
+        // 后者会把**所有**可滚动祖先一起滚（包括整页），在弹窗里副作用太大。
+        if (modal && target && typeof target.getBoundingClientRect === 'function') {
+          const offset = target.getBoundingClientRect().top
+            - modal.getBoundingClientRect().top
+            + modal.scrollTop;
+          // 留出顶部 sticky 标题栏的高度，别让目标被标题盖住
+          modal.scrollTop = Math.max(0, offset - 56);
+        }
+      }
     },
   });
 }
@@ -112,7 +131,7 @@ function renderPanel() {
 
     <div data-preview></div>
 
-    <div class="section-head" style="margin-top:var(--sp-5)"><h2>去哪儿找题：推荐的免费数学资源</h2><span class="line"></span></div>
+    <div class="section-head" id="rec-sites" style="margin-top:var(--sp-5)"><h2>去哪儿找题：推荐的免费数学资源</h2><span class="line"></span></div>
     ${renderRecommendedSites()}
 
     <div class="section-head" style="margin-top:var(--sp-5)"><h2>导出 / 分享</h2><span class="line"></span></div>

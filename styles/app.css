@@ -846,6 +846,9 @@ mark { background: var(--c-accent); color: #1a1a1a; border-radius: 3px; padding:
   .navbtn[aria-current="page"] { box-shadow: none; background: var(--c-primary-soft); }
   .toast-host { bottom: 84px; }
   .quiz-body, .setup-panel, .card-pad { padding: var(--sp-4); }
+  /* 统计小卡在手机上排两列。默认的 minmax(220px, 1fr) 在 ~318px 的内容宽里
+     只放得下一列，6 张卡会白占近 540px 高度，把「题库导入 / 分享」顶到两屏之外。 */
+  .grid-3 { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--sp-3); }
   .page-head h1 { font-size: 21px; }
   .nb-item { flex-direction: column; }
   .nb-side { align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
