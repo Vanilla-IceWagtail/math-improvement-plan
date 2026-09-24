@@ -249,9 +249,11 @@ npm run validate # 内容校验：字段、id 唯一性、引用完整性、富�
 npm run test-math   # 数学记号排版测试（极限号样式 + 实体解码回归）
 npm run smoke       # 端到端冒烟测试：78 项断言，真的把 app.js 跑一遍
 npm run test-picker # 章节 / 小节选择器测试（含按小节出题的端到端校验）
+npm run test-importer   # 题库导入格式识别测试（别家字段名、中文题型、错题本导出）
+npm run test-import-ui  # 题库导入界面端到端测试（拖入→预览→勾选→导入）
 npm run verify-readme     # 核对本文档里的事实性陈述与代码是否一致
 npm run verify-community  # 核对社区文件（issue 表单结构、行为准则、安全策略）
-npm run check    # 上面六件事依次跑一遍（提交前建议跑这个）
+npm run check    # 上面八件事依次跑一遍（提交前建议跑这个）
 node scripts/validate-content.mjs --strict   # 把"提示"也当成失败
 node scripts/fetch-open-bank.mjs --schema    # 查看题库 JSON 格式说明
 ```
@@ -728,6 +730,38 @@ LICENSE-SCOPE.md           许可范围说明（哪部分适用哪份许可）
 | [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) | 提 PR 时的检查清单（含版权确认） |
 | [`CHANGELOG.md`](CHANGELOG.md) | 每个版本改了什么 |
 | [`LICENSE-SCOPE.md`](LICENSE-SCOPE.md) | 哪部分适用 BSD 3-Clause、哪部分适用 CC-BY-4.0 |
+
+### 导入和分享题库
+
+「数据与设置 → 题库导入 / 分享」里有三种导入方式，都**不用先把文件改成我们的格式**：
+
+| 方式 | 说明 |
+| --- | --- |
+| **拖入文件** | 把 `.json` 直接拖到界面上（手机也能用） |
+| **点选文件** | 同上，走系统文件选择器 |
+| **粘贴 JSON 文本** | 从别处复制的内容直接粘进来 |
+
+导入是**两步**的：先解析预览，确认后才入库。预览里逐题显示状态并可按需勾选：
+
+- ✅ **可导入** —— 字段齐全（默认勾选）
+- ⚠️ **有问题** —— 缺什么会写清楚（如"缺题干""选择题缺少选项"），不可勾选
+- 🔁 **重复** —— id 与现有题库冲突，默认跳过
+
+**格式自动识别**，常见字段名会映射：`question`/`prompt`/`题干` → `stem`；
+`choices` → `options`；`correct`/`correctAnswer` → `answer`；
+`explanation`/`解析` → `solution`；`level` → `difficulty`。
+选项里标 `isCorrect: true` 会自动推出答案；选择题答案写下标 `0/1/2` 会转成 `A/B/C`。
+顶层支持纯数组、`{ questions: [...] }`、`{ items: [...] }`、以及本站「错题本导出」的文件。
+**必填只有三项**：`id`、`stem`、`answer`。
+
+**分享**：可以把自己想要的章节与难度导出成一个「题包」文件，同学拖进自己的网站就能用。
+
+> 🔒 **关于「连接题库网站账号」**：本项目**不会**要求你输入其他网站的账号密码。
+> 本站是纯静态页面、没有服务器，拿不到跨站登录状态；而"把别站密码交给一个陌生网页"
+> 既不安全，通常也违反对方网站的使用条款。
+> 正确做法是在题库网站里**导出**题目，再拖进这里。
+> 若某个题库站提供 **OAuth 授权 / 开放 API**（用户不交密码，而是跳转到对方页面授权），
+> 可以正式对接 —— 扩展点写在 `js/views/bank-import.js` 的 `connectViaOAuth()` 注释里。
 
 ---
 

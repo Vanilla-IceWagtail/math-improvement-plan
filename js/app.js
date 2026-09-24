@@ -12,7 +12,9 @@ import { $, $$, toast, openModal, confirmDialog, chime, humanizeDue, formatDateT
 import { getState, subscribe, updateSettings, exportBackup, importState, resetAll, download, toggleStar, toggleNotebook, getRecord } from './storage.js';
 import { dueRecords, srsSummary, INTERVALS, MAX_PHASE, upcomingRecords } from './srs.js';
 import { loadLibrary, getItem, getChapter } from './library.js';
-import { loadBank, getQuestion, bankStats, fetchExternalBank, clearExternalBanks } from './bank.js';
+import { loadBank, getQuestion, getQuestions, bankStats, fetchExternalBank, clearExternalBanks } from './bank.js';
+import { openBankImport } from './views/bank-import.js';
+import { buildPack } from './importer.js';
 import { renderPractice, practiceActions, practiceInput, practiceState, bindRerender as bindPracticeRerender } from './views/practice.js';
 import { renderNotebook, notebookActions, startReview, forgettingCurveSVG, setRerender as setNotebookRerender } from './views/notebook.js';
 import { renderTextbook, textbookActions, textbookInput, jumpToItem, initTextbook, setRerender as setTextbookRerender } from './views/textbook.js';
@@ -226,20 +228,29 @@ function openSettings() {
         </div>
       </div>
 
-      <div class="section-head"><h2>实时题库（可选）</h2><span class="line"></span></div>
+      <div class="section-head"><h2>题库导入 / 分享</h2><span class="line"></span></div>
       <p style="font-size:13.6px;color:var(--c-text-soft)">
-        内置题库有 <b>${bank.total}</b> 道原创题，离线可用。你也可以填一个
-        <b>同源或允许跨域</b>的 JSON 地址，页面会实时拉取合并（例如自己搭的题库服务，或把
-        OpenStax 等开放许可题库转成 JSON 后挂在自己的静态托管上）。
+        内置题库有 <b>${bank.total}</b> 道原创题，离线可用。想加题的话有三种方式，
+        都在同一个面板里：<b>拖入 JSON 文件</b>、<b>粘贴 JSON 文本</b>、<b>填网址拉取</b>。
+        导入前会逐题校验并让你勾选要哪些题 —— 不用先把文件改成我们的格式，常见字段名会自动识别。
       </p>
       <div class="row row-wrap" style="gap:8px;margin-top:8px">
-        <input class="input" style="flex:1;min-width:220px" placeholder="https://example.com/math-bank.json" data-set="libraryUrl" value="${esc(st.libraryUrl || '')}">
-        <button type="button" class="btn btn-primary" data-act="fetch-bank">${icon('refresh', { size: 14 })} 拉取并合并</button>
+        <button type="button" class="btn btn-primary" data-act="open-import">${icon('upload', { size: 14 })} 打开导入 / 导出面板</button>
+        <button type="button" class="btn" data-act="export-all">${icon('download', { size: 14 })} 导出全部题库</button>
         ${bank.imported ? `<button type="button" class="btn btn-danger-ghost" data-act="clear-banks">清空外部题（${bank.imported}）</button>` : ''}
       </div>
+
+      <p class="field-label" style="margin-top:var(--sp-4)">也可以直接填一个 JSON 网址（同源或允许跨域）</p>
+      <div class="row row-wrap" style="gap:8px;margin-top:4px">
+        <input class="input" style="flex:1;min-width:220px" placeholder="https://example.com/math-bank.json" data-set="libraryUrl" value="${esc(st.libraryUrl || '')}">
+        <button type="button" class="btn" data-act="fetch-bank">${icon('refresh', { size: 14 })} 拉取并合并</button>
+      </div>
       <p style="font-size:12.6px;color:var(--c-text-faint);margin-top:6px">
-        ⚖️ 只接开放许可或你自己拥有的题库。本项目不抓取任何付费题库，也不内置未授权内容。
-        导入的题目需要带有 <code>id / stem / answer</code> 字段。
+        ⚖️ 只接开放许可（CC BY / CC0）或你自己拥有的题库。本项目不抓取任何付费题库。
+        导入的题目至少要有 <code>id / stem / answer</code> 三项。
+        <br>
+        🔒 本项目<b>不会</b>要求你输入其他题库网站的账号密码 —— 那既不安全，也通常违反对方条款。
+        正确做法是在对方网站里<b>导出</b>题目，再拖进这里。
       </p>
       ${getState().importedBanks.length ? `
       <div style="margin-top:10px">
@@ -276,6 +287,20 @@ function openSettings() {
           if (key === 'theme') applyTheme();
           if (key === 'popupOnOpen' || key === 'sound') toast('已保存', 'ok', 1200);
         });
+      });
+
+      // 打开完整的导入 / 导出面板（拖拽、粘贴、网址、导出一应俱全）
+      mask.querySelector('[data-act="open-import"]').addEventListener('click', () => {
+        close();
+        openBankImport();
+      });
+
+      // 一键导出全部题库（方便分享给别人）
+      mask.querySelector('[data-act="export-all"]').addEventListener('click', () => {
+        const qs = getQuestions().map(({ origin, ...rest }) => { void origin; return rest; });
+        const pack = buildPack(qs, { name: '数学陪练-全部题库' });
+        download('数学陪练-全部题库.json', JSON.stringify(pack, null, 2));
+        toast(`已导出 ${qs.length} 道题`, 'ok', 3000);
       });
 
       mask.querySelector('[data-act="fetch-bank"]').addEventListener('click', async () => {

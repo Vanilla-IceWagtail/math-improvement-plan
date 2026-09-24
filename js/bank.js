@@ -48,6 +48,17 @@ export function validateQuestion(q, index = 0) {
   return errs;
 }
 
+/**
+ * 把一批题目加进运行时题库（供「导入」功能调用）。
+ * 已存在的 id 会被跳过（内置题库优先），返回真正新增的条数。
+ * @param {object[]} list 已经过 validateQuestion 校验的题目
+ * @param {'builtin'|'imported'} [origin]
+ * @returns {number} 新增条数
+ */
+export function addQuestionsToBank(list, origin = 'imported') {
+  return addQuestions(list, origin);
+}
+
 function addQuestions(list, origin) {
   let added = 0;
   for (const q of list) {

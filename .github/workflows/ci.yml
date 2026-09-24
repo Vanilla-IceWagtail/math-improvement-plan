@@ -68,6 +68,12 @@ jobs:
       - name: 章节 / 小节选择器测试
         run: npm run test-picker
 
+      - name: 题库导入格式识别测试
+        run: npm run test-importer
+
+      - name: 题库导入界面端到端测试
+        run: npm run test-import-ui
+
       - name: 端到端冒烟测试（78 项断言，真实执行 app.js）
         run: npm run smoke
 

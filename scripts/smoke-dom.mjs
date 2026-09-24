@@ -147,6 +147,7 @@ class Node {
   get value() { return this._value != null ? this._value : (this.attributes.get('value') ?? ''); }
   set value(v) { this._value = String(v == null ? '' : v); }
   get files() { return this._files || []; }
+  set files(v) { this._files = Array.isArray(v) ? v : []; }
   contains(node) {
     let cur = node;
     while (cur) { if (cur === this) return true; cur = cur.parentNode; }
@@ -187,6 +188,14 @@ function matchesComplex(el, sel) {
 function matchSimple(el, sel) {
   if (!sel) return false;
   let s = sel;
+
+  // 支持 :not(...) 伪类（本项目用它筛"未禁用的复选框"等）
+  const nots = [];
+  s = s.replace(/:not\(([^)]*)\)/g, (_, inner) => { nots.push(inner.trim()); return ''; });
+  for (const n of nots) {
+    if (matchSimple(el, n)) return false;
+  }
+
   const attrs = [];
   s = s.replace(/\[([^\]]+)\]/g, (_, inner) => { attrs.push(inner); return ''; });
   const classes = [];
@@ -392,6 +401,15 @@ export function installDom() {
     getComputedStyle: () => ({ getPropertyValue: () => '' }),
     URL: { createObjectURL: () => 'blob:mock', revokeObjectURL() {} },
     Blob: class { constructor(parts) { this.parts = parts; } },
+    // 题库导入要用 File：拖拽/选择文件后调 file.text() 读内容
+    File: class {
+      constructor(parts, name, opts = {}) {
+        this.parts = parts;
+        this.name = name || 'file.json';
+        this.type = opts.type || '';
+      }
+      text() { return Promise.resolve(this.parts.join('')); }
+    },
     MutationObserver: class { observe() {} disconnect() {} },
     AudioContext: undefined,
     console,
@@ -409,6 +427,7 @@ export function installDom() {
   globalThis.requestAnimationFrame = win.requestAnimationFrame;
   globalThis.MutationObserver = win.MutationObserver;
   globalThis.Blob = win.Blob;
+  globalThis.File = win.File;
   globalThis.URL = win.URL;
   globalThis.addEventListener = win.addEventListener;
   globalThis.getComputedStyle = win.getComputedStyle;
